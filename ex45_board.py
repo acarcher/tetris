@@ -158,42 +158,51 @@ class Board(object):
         return self.current_piece.move(curses.KEY_DOWN)
 
     # Check for collisions and OOB
-    def valid_move(self, next_pos):
+    def invalid_move(self, next_pos):
         out_of_bounds = False
         collision = False
 
-        self.screen.addstr(6, 20, "next_pos: {}".format(next_pos))
+        self.screen.addstr(6, 20, "next_pos: {}       ".format(next_pos))
         self.screen.refresh()
 
         out_of_bounds = self.is_oob(next_pos)
 
-        self.screen.addstr(4, 20, "out_of_bounds: {}".format(out_of_bounds))
+        self.screen.addstr(4, 20, "out_of_bounds: {} ".format(out_of_bounds))
         self.screen.refresh()
+
+        # Avoids going to is_collision index out of range
+        # TODO: make this better
+        if out_of_bounds:
+            return out_of_bounds
 
         collision = self.is_collision(next_pos)
 
         self.screen.addstr(5, 20, "collision: {}".format(collision))
         self.screen.refresh()
 
-        return not (out_of_bounds or collision)
+        return out_of_bounds or collision
 
     def is_oob(self, next_pos):
 
         # Out of bounds check
-        # FIXME
         for point in next_pos:
             if point[0] < 0 or point[0] > self.height - 1:
                 self.screen.addstr(7, 20, "height <0: {}".format(point[0] < 0))
-                self.screen.addstr(8, 20, "height >: {}".format(point[0] > self.height))
+                self.screen.addstr(8, 20, "height >: {}".format(point[0] > self.height - 1))
                 self.screen.refresh()
                 return True
             elif point[1] < 0 or point[1] > self.width - 1:
                 self.screen.addstr(9, 20, "width <0: {}".format(point[1] < 0))
-                self.screen.addstr(10, 20, "width >: {}".format(point[1] > self.width))
+                self.screen.addstr(10, 20, "width >: {}".format(point[1] > self.width - 1))
                 self.screen.refresh()
                 return True
-            else:
-                return False
+
+        self.screen.addstr(7, 20, " " * 20)
+        self.screen.addstr(8, 20, " " * 20)
+        self.screen.addstr(9, 20, " " * 20)
+        self.screen.addstr(10, 20, " " * 20)
+        self.screen.refresh()
+        return False
 
     def is_collision(self, next_pos):
         # Collision check from below

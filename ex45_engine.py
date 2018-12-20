@@ -35,6 +35,7 @@ class Engine(object):
         else:
             raise Exception("Key unbound")
             pass
+            #TODO
 
     # validation loop
     # valid move?
@@ -49,12 +50,13 @@ class Engine(object):
     # Take in action output, returns new_piece bool
     # TODO: make nicer
     def action_update(self, next_pos):
-        if self.board.valid_move(next_pos):  # validity check and update
+        if not self.board.invalid_move(next_pos):  # validity check and update
             self.board.screen.addstr(11, 20, "valid move")
             self.board.screen.refresh()
             self.board.update_piece_position(next_pos)
         else:
             # raise Exception("Illegal move")
+            # TODO
             pass
 
     # new piece loop
