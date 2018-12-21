@@ -35,12 +35,20 @@ class Board(object):
         assert(height / 2 == width)
         self.height = height
         self.width = width
+        self.board_state = self.create_state(height, width, vanish_zone)
         self.screen = screen
+        self.game_window = None
         self.current_piece = None
-        self.board_state = self.create_playfield(height, width, vanish_zone)
         self.visible_area = None  # to be used later
 
-    def init_colors(self):
+    def init_curses(self):
+
+        self.game_window = curses.newwin(self.height, self.width)
+        self.game_window.keypad(True)
+        self.game_window.scrollok(True)
+        self.game_window.box()
+        self.game_window.refresh()
+
         curses.init_pair(curses.COLOR_CYAN,
                          curses.COLOR_CYAN,
                          curses.COLOR_BLACK)
@@ -69,9 +77,13 @@ class Board(object):
                          curses.COLOR_RED,
                          curses.COLOR_BLACK)
 
+        self.screen.nodelay(True)
+        self.game_window.nodelay(True)
+        curses.curs_set(False)
+
     # Physical representation of the board and borders
-    def create_playfield(self, height, width, vanish):
-        return [[" " for x in range(0, width)]
+    def create_state(self, height, width, vanish):
+        return [["." for x in range(0, width)]
                 for y in range(0, height + vanish)]
 
     def add_borders(self):
@@ -104,16 +116,16 @@ class Board(object):
                         color = None
 
                 if color:
-                    self.screen.addstr(y_idx, x_idx, char,
-                                       curses.color_pair(color))
+                    self.game_window.addstr(y_idx, x_idx, b'\xe2\x96\xa0',
+                                            curses.color_pair(color))
                 else:
-                    self.screen.addstr(y_idx, x_idx, char)
+                    self.game_window.addstr(y_idx, x_idx, char)
 
-        self.screen.refresh()
+        self.game_window.refresh()
 
     # get user input and only one input per tick
     def get_input(self):
-        char = self.screen.getch()
+        char = self.game_window.getch()
         curses.flushinp()
         return char
 
@@ -172,6 +184,8 @@ class Board(object):
 
         # Avoids going to is_collision index out of range
         # TODO: make this better
+        # When I don't need printing..
+        # can just return the functions in correct order
         if out_of_bounds:
             return out_of_bounds
 
@@ -208,7 +222,7 @@ class Board(object):
         # Collision check from below
         for point in next_pos:
             if (point not in self.current_piece.location
-               and self.board_state[point[0]][point[1]] != " "):
+               and self.board_state[point[0]][point[1]] != "."):
 
                 return True
         return False
@@ -218,17 +232,16 @@ class Board(object):
         full_rows = []
 
         for i, row in enumerate(self.board_state):
-            if " " not in row:
+            if "." not in row:
                 full_rows.append(i)
 
         return full_rows
 
     # Update board representation and piece location
-    # TODO: validate
     def update_piece_position(self, next_pos):
 
         for point in self.current_piece.location:
-            self.board_state[point[0]][point[1]] = " "
+            self.board_state[point[0]][point[1]] = "."
 
         self.current_piece.location = next_pos
 
@@ -236,12 +249,28 @@ class Board(object):
             self.board_state[point[0]][point[1]] = self.current_piece.symbol
 
     # Clear complete rows
-    # TODO: move all the rest down LUL woops
-    # maybe we want blocks to be fundamental unit instead of pieces
-    # then gravity can apply across the entire board for each space
+    # FIXME: off by one error when multiple lines cleared
     def clear_full_rows(self, full_rows):
-        for row in full_rows:
-            self.board_state[row][:] = [" "] * len(self.board_state[row][:])
+        accumulated_rows = 0
+
+        for full_row in full_rows:
+            self.board_state[full_row][:] = ["."] * len(self.board_state[full_row][:])
+
+        for row_num, row in zip(reversed(range(self.height)),
+                                self.board_state[::-1]):
+
+            if row_num in full_rows:
+                accumulated_rows += 1
+
+            if row_num - accumulated_rows < 0:
+                self.board_state[row_num][:] = self.board_state[0][:]
+                pass
+            else:
+                self.board_state[row_num][:] = self.board_state[row_num - accumulated_rows][:]
+
+        # clear all full rows
+        # work from bottom to top figuring out how many lines to
+        # move each piece by number of accumulated empty rows
 
     # Start the next piece
     def add_new_piece(self, piece):
@@ -269,7 +298,7 @@ class Board(object):
             downward = [point[0] + 1, point[1]]
 
             if (downward not in self.current_piece.location
-               and self.board_state[downward[0]][downward[1]] != " "):
+               and self.board_state[downward[0]][downward[1]] != "."):
 
                 return True
 
@@ -278,7 +307,7 @@ class Board(object):
     # Determine if default blocks are occupied
     def _block_out(self, default_position=[]):
         for point in default_position:
-            if self.board_state[point[0]][point[1]] is not " ":
+            if self.board_state[point[0]][point[1]] is not ".":
                 return True
 
         return False

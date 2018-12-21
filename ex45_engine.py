@@ -35,19 +35,8 @@ class Engine(object):
         else:
             raise Exception("Key unbound")
             pass
-            #TODO
+            # TODO
 
-    # validation loop
-    # valid move?
-    #   update piece pos
-    #   return False
-    # piece landed
-    #   loss?
-    #       game_over
-    #   return True
-    # other invalid move
-    #
-    # Take in action output, returns new_piece bool
     # TODO: make nicer
     def action_update(self, next_pos):
         if not self.board.invalid_move(next_pos):  # validity check and update
@@ -72,9 +61,7 @@ class Engine(object):
     # TODO
     def run(self):
 
-        self.board.init_colors()
-        self.board.screen.nodelay(True)
-        curses.curs_set(False)
+        self.board.init_curses()
 
         tick = 0
         game_over = False
