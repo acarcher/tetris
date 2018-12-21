@@ -38,16 +38,19 @@ class Board(object):
         self.board_state = self.create_state(height, width, vanish_zone)
         self.screen = screen
         self.game_window = None
+        self.border_window = None
         self.current_piece = None
         self.visible_area = None  # to be used later
 
     def init_curses(self):
 
-        self.game_window = curses.newwin(self.height, self.width)
+        # self.border_window = curses.newwin(self.height+2, self.width+2)
+        # self.border_window.border()
+        self.game_window = curses.newwin(self.height+1, self.width+1)
         self.game_window.keypad(True)
         self.game_window.scrollok(True)
-        self.game_window.box()
-        self.game_window.refresh()
+        # self.game_window.box()
+        # self.game_window.refresh()
 
         curses.init_pair(curses.COLOR_CYAN,
                          curses.COLOR_CYAN,
@@ -86,15 +89,15 @@ class Board(object):
         return [["." for x in range(0, width)]
                 for y in range(0, height + vanish)]
 
-    def add_borders(self):
+    # def add_borders(self):
 
-        board = self.board_state[:]
-        board.insert(0, ["-"] * self.width)
-        board.append(["-"] * self.width)
+    #     board = self.board_state[:]
+    #     board.insert(0, ["-"] * self.width)
+    #     board.append(["-"] * self.width)
 
-        board = [["|"] + row + ["|"] for row in board]
+    #     board = [["|"] + row + ["|"] for row in board]
 
-        return board
+    #     return board
 
     # write the board to the terminal
     # FIXME
@@ -137,26 +140,26 @@ class Board(object):
         y = 1
         # TODO: validate
         if tetrimino == "I":
-            return [[y, x_cl - 1], [y, x_cl],
-                    [y, x_cl + 1], [y, x_cl + 2]]
+            return [[y, x_cl - 2], [y, x_cl - 1],
+                    [y, x_cl], [y, x_cl + 1]]
         elif tetrimino == "J":
-            return [[y - 1, x_cl - 1], [y, x_cl - 1],
-                    [y, x_cl], [y, x_cl + 1]]
-        elif tetrimino == "L":
-            return [[y - 1, x_cl + 1], [y, x_cl - 1],
-                    [y, x_cl], [y, x_cl + 1]]
-        elif tetrimino == "O":
-            return [[y - 1, x_cl], [y - 1, x_cl + 1],
-                    [y, x_cl], [y, x_cl + 1]]
-        elif tetrimino == "S":
-            return [[y - 1, x_cl], [y - 1, x_cl + 1],
+            return [[y - 1, x_cl - 2], [y, x_cl - 2],
                     [y, x_cl - 1], [y, x_cl]]
-        elif tetrimino == "T":
-            return [[y - 1, x_cl], [y, x_cl - 1],
-                    [y, x_cl], [y, x_cl + 1]]
-        elif tetrimino == "Z":
+        elif tetrimino == "L":
+            return [[y - 1, x_cl], [y, x_cl - 2],
+                    [y, x_cl - 1], [y, x_cl]]
+        elif tetrimino == "O":
             return [[y - 1, x_cl - 1], [y - 1, x_cl],
-                    [y, x_cl], [y, x_cl + 1]]
+                    [y, x_cl - 1], [y, x_cl]]
+        elif tetrimino == "S":
+            return [[y - 1, x_cl - 1], [y - 1, x_cl],
+                    [y, x_cl - 2], [y, x_cl - 1]]
+        elif tetrimino == "T":
+            return [[y - 1, x_cl - 1], [y, x_cl - 2],
+                    [y, x_cl - 1], [y, x_cl]]
+        elif tetrimino == "Z":
+            return [[y - 1, x_cl - 2], [y - 1, x_cl - 1],
+                    [y, x_cl - 1], [y, x_cl]]
         else:
             raise Exception("Incorrect tetrimino")
 
