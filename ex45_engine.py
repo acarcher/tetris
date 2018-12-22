@@ -1,8 +1,8 @@
 # Driver and state transitions
 import time
-import curses
 import random
-from sys import exit
+from curses import KEY_RIGHT, KEY_LEFT, KEY_UP, KEY_DOWN, ERR
+# from sys import exit
 
 
 class Engine(object):
@@ -21,10 +21,9 @@ class Engine(object):
 
     # Takes in key_press, returns the correct action
     def action(self, key_press):
-        move_keys = (curses.KEY_RIGHT, curses.KEY_LEFT,
-                     curses.KEY_DOWN)
+        move_keys = (KEY_RIGHT, KEY_LEFT, KEY_DOWN)
 
-        rotate_key = (curses.KEY_UP,)
+        rotate_key = (KEY_UP,)
 
         if key_press == ord('q'):
             self.end()
@@ -40,8 +39,9 @@ class Engine(object):
     # TODO: make nicer
     def action_update(self, next_pos):
         if not self.board.invalid_move(next_pos):  # validity check and update
-            self.board.screen.addstr(11, 20, "valid move")
-            self.board.screen.refresh()
+            if self.board.debug:
+                self.board.debug_window.addstr(11, 0, "valid move")
+                self.board.debug_window.refresh()
             self.board.update_piece_position(next_pos)
         else:
             # raise Exception("Illegal move")
@@ -69,9 +69,9 @@ class Engine(object):
         self.new_piece_handler(True)
 
         while(not game_over):
-
-            self.board.screen.addstr(0, 20, "Tick: {}".format(tick))
-            self.board.screen.refresh()
+            if self.board.debug:
+                self.board.debug_window.addstr(0, 0, "Tick: {}".format(tick))
+                self.board.debug_window.refresh()
 
             new_piece = False
 
@@ -79,9 +79,10 @@ class Engine(object):
 
             key_pressed = self.board.get_input()  # take input
 
-            if key_pressed != curses.ERR and key_pressed is not None:
-                self.board.screen.addstr(1, 20, "Key pressed: {}".format(key_pressed))
-                self.board.screen.refresh()
+            if key_pressed != ERR and key_pressed is not None:
+                if self.board.debug:
+                    self.board.debug_window.addstr(1, 0, "Key pressed: {}".format(key_pressed))
+                    self.board.debug_window.refresh()
 
                 self.action_update(self.action(key_pressed))
 
@@ -103,10 +104,10 @@ class Engine(object):
 
             if tick % (self.speed // self.tick_length + 1) == 0:  # default movement
                 self.action_update(self.board.gravity())
-
-                self.board.screen.addstr(2, 20, "Gravity: {}".format(tick))
-                self.board.screen.addstr(3, 20, "New piece: {}".format(new_piece))
-                self.board.screen.refresh()
+                if self.board.debug:
+                    self.board.debug_window.addstr(2, 0, "Gravity: {}".format(tick))
+                    self.board.debug_window.addstr(3, 0, "New piece: {}".format(new_piece))
+                    self.board.debug_window.refresh()
 
                 if self.board.piece_landed():  # piece is done moving
                     if self.board.is_loss(self.board.current_piece):  # check for lock or block

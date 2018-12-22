@@ -29,7 +29,7 @@ class Board(object):
         "red": curses.COLOR_RED
     }
 
-    def __init__(self, screen, height=20, width=10, vanish_zone=0):
+    def __init__(self, screen, height=20, width=10, vanish_zone=0, debug=False):
         assert(height % 2 == 0)
         assert(width % 2 == 0)
         assert(height / 2 == width)
@@ -37,20 +37,47 @@ class Board(object):
         self.width = width
         self.board_state = self.create_state(height, width, vanish_zone)
         self.screen = screen
-        self.game_window = None
         self.border_window = None
+        self.game_window = None
+        self.score_window = None
+        self.debug_window = None
         self.current_piece = None
-        self.visible_area = None  # to be used later
+        self.debug = debug
 
     def init_curses(self):
 
-        # self.border_window = curses.newwin(self.height+2, self.width+2)
-        # self.border_window.border()
-        self.game_window = curses.newwin(self.height+1, self.width+1)
+        curses.curs_set(False)
+
+        dimensions = self.screen.getmaxyx()
+
+        y_start = 0
+
+        if self.debug:
+            x_start = 0
+        else:
+            x_start = dimensions[1] // 2 - (self.width + 2) // 2
+
+        self.border_window = curses.newwin(self.height + 3, self.width + 2,
+                                           y_start, x_start)
+        self.border_window.border()
+        self.border_window.refresh()
+
+        self.game_window = curses.newwin(self.height + 1, self.width,
+                                         y_start + 1, x_start + 1)
         self.game_window.keypad(True)
-        self.game_window.scrollok(True)
-        # self.game_window.box()
-        # self.game_window.refresh()
+        self.game_window.nodelay(True)
+
+        # FIXME: The game_window scrolls up by one line or fails when height is not
+        # + 1 greater than area being written to, also forces border window to be
+        # larger; not initially a problem and unknown cause
+        # self.game_window.scrollok(True)
+
+        self.score_window = curses.newwin(self.height, self.width,
+                                          0, x_start + self.width + 2)
+
+        if self.debug:
+            self.debug_window = curses.newwin(self.height, 45,
+                                              0, x_start + self.width * 2 + 2)
 
         curses.init_pair(curses.COLOR_CYAN,
                          curses.COLOR_CYAN,
@@ -80,31 +107,15 @@ class Board(object):
                          curses.COLOR_RED,
                          curses.COLOR_BLACK)
 
-        self.screen.nodelay(True)
-        self.game_window.nodelay(True)
-        curses.curs_set(False)
-
     # Physical representation of the board and borders
     def create_state(self, height, width, vanish):
         return [["." for x in range(0, width)]
                 for y in range(0, height + vanish)]
 
-    # def add_borders(self):
-
-    #     board = self.board_state[:]
-    #     board.insert(0, ["-"] * self.width)
-    #     board.append(["-"] * self.width)
-
-    #     board = [["|"] + row + ["|"] for row in board]
-
-    #     return board
-
     # write the board to the terminal
     # FIXME
     def draw(self):
         attributes = Piece.tetromino_attributes.values()
-        # self.screen.addstr(16, 20, "attributes {}".format(attributes))
-        # self.screen.refresh()
 
         for y_idx, row in enumerate(self.board_state):
             for x_idx, col in enumerate(row):
@@ -138,7 +149,7 @@ class Board(object):
         tetrimino = piece.tetromino
         x_cl = self.width // 2  # center left
         y = 1
-        # TODO: validate
+
         if tetrimino == "I":
             return [[y, x_cl - 2], [y, x_cl - 1],
                     [y, x_cl], [y, x_cl + 1]]
@@ -177,48 +188,53 @@ class Board(object):
         out_of_bounds = False
         collision = False
 
-        self.screen.addstr(6, 20, "next_pos: {}       ".format(next_pos))
-        self.screen.refresh()
+        if self.debug:
+            self.debug_window.addstr(6, 0, "next_pos: {}       ".format(next_pos))
+            self.debug_window.refresh()
 
-        out_of_bounds = self.is_oob(next_pos)
+            out_of_bounds = self.is_oob(next_pos)
 
-        self.screen.addstr(4, 20, "out_of_bounds: {} ".format(out_of_bounds))
-        self.screen.refresh()
+            self.debug_window.addstr(4, 0, "out_of_bounds: {} ".format(out_of_bounds))
+            self.debug_window.refresh()
 
-        # Avoids going to is_collision index out of range
-        # TODO: make this better
-        # When I don't need printing..
-        # can just return the functions in correct order
-        if out_of_bounds:
-            return out_of_bounds
+            # Avoids going to is_collision index out of range
+            # TODO: make this better
+            # When I don't need printing..
+            # can just return the functions in correct order
+            if out_of_bounds:
+                return out_of_bounds
 
-        collision = self.is_collision(next_pos)
+            collision = self.is_collision(next_pos)
 
-        self.screen.addstr(5, 20, "collision: {}".format(collision))
-        self.screen.refresh()
+            self.debug_window.addstr(5, 0, "collision: {}".format(collision))
+            self.debug_window.refresh()
 
-        return out_of_bounds or collision
+            return out_of_bounds or collision
+
+        return self.is_oob(next_pos) or self.is_collision(next_pos)
 
     def is_oob(self, next_pos):
 
         # Out of bounds check
         for point in next_pos:
             if point[0] < 0 or point[0] > self.height - 1:
-                self.screen.addstr(7, 20, "height <0: {}".format(point[0] < 0))
-                self.screen.addstr(8, 20, "height >: {}".format(point[0] > self.height - 1))
-                self.screen.refresh()
+                if self.debug:
+                    self.debug_window.addstr(7, 0, "height <0: {}".format(point[0] < 0))
+                    self.debug_window.addstr(8, 0, "height >: {}".format(point[0] > self.height - 1))
+                    self.debug_window.refresh()
                 return True
             elif point[1] < 0 or point[1] > self.width - 1:
-                self.screen.addstr(9, 20, "width <0: {}".format(point[1] < 0))
-                self.screen.addstr(10, 20, "width >: {}".format(point[1] > self.width - 1))
-                self.screen.refresh()
+                if self.debug:
+                    self.debug_window.addstr(9, 0, "width <0: {}".format(point[1] < 0))
+                    self.debug_window.addstr(10, 0, "width >: {}".format(point[1] > self.width - 1))
+                    self.debug_window.refresh()
                 return True
-
-        self.screen.addstr(7, 20, " " * 20)
-        self.screen.addstr(8, 20, " " * 20)
-        self.screen.addstr(9, 20, " " * 20)
-        self.screen.addstr(10, 20, " " * 20)
-        self.screen.refresh()
+        if self.debug:
+            self.debug_window.addstr(7, 0, " " * 20)
+            self.debug_window.addstr(8, 0, " " * 20)
+            self.debug_window.addstr(9, 0, " " * 20)
+            self.debug_window.addstr(10, 0, " " * 20)
+            self.debug_window.refresh()
         return False
 
     def is_collision(self, next_pos):

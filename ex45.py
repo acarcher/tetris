@@ -12,7 +12,7 @@ from ex45_board import Board
 
 
 def main(screen):
-    board = Board(screen, 20, 10)
+    board = Board(screen, debug=False)
     game = Engine(board, 1)
     game.run()
 
