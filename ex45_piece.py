@@ -45,7 +45,6 @@ class Piece(object):
             return [[point[0] + 1, point[1]] for point in self.location]
 
     # http://tetris.wikia.com/wiki/SRS
-    # FIXME
     def rotate_clockwise(self):
         orientation_transform = self._next_orientation()
 
@@ -63,7 +62,5 @@ class Piece(object):
         mapping = self.tetromino_orientations[self.tetromino]
 
         transform = mapping[self.orientation]
-
-        self.orientation = (self.orientation + 1) % 4
 
         return transform

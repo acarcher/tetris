@@ -8,17 +8,6 @@ from ex45_piece import Piece
 
 class Board(object):
 
-    terminal_colors = {
-        "cyan": "\033[36m",
-        "blue": "\033[34m",
-        "white": "\033[37m",
-        "yellow": "\033[33m",
-        "green": "\033[32m",
-        "magenta": "\033[35m",
-        "red": "\033[31m",
-        "reset": "\033[0m"
-    }
-
     curses_colors = {
         "cyan": curses.COLOR_CYAN,
         "blue": curses.COLOR_BLUE,
@@ -185,11 +174,12 @@ class Board(object):
 
     # Check for collisions and OOB
     def invalid_move(self, next_pos):
-        out_of_bounds = False
-        collision = False
 
         if self.debug:
-            self.debug_window.addstr(6, 0, "next_pos: {}       ".format(next_pos))
+            out_of_bounds = False
+            collision = False
+
+            self.debug_window.addstr(7, 0, "next_pos: {}       ".format(next_pos))
             self.debug_window.refresh()
 
             out_of_bounds = self.is_oob(next_pos)
@@ -197,16 +187,12 @@ class Board(object):
             self.debug_window.addstr(4, 0, "out_of_bounds: {} ".format(out_of_bounds))
             self.debug_window.refresh()
 
-            # Avoids going to is_collision index out of range
-            # TODO: make this better
-            # When I don't need printing..
-            # can just return the functions in correct order
             if out_of_bounds:
                 return out_of_bounds
 
             collision = self.is_collision(next_pos)
 
-            self.debug_window.addstr(5, 0, "collision: {}".format(collision))
+            self.debug_window.addstr(6, 0, "collision: {}".format(collision))
             self.debug_window.refresh()
 
             return out_of_bounds or collision
@@ -219,24 +205,25 @@ class Board(object):
         for point in next_pos:
             if point[0] < 0 or point[0] > self.height - 1:
                 if self.debug:
-                    self.debug_window.addstr(7, 0, "height <0: {}".format(point[0] < 0))
-                    self.debug_window.addstr(8, 0, "height >: {}".format(point[0] > self.height - 1))
+                    self.debug_window.addstr(8, 0, "height <0: {}".format(point[0] < 0))
+                    self.debug_window.addstr(9, 0, "height >: {}".format(point[0] > self.height - 1))
                     self.debug_window.refresh()
                 return True
             elif point[1] < 0 or point[1] > self.width - 1:
                 if self.debug:
-                    self.debug_window.addstr(9, 0, "width <0: {}".format(point[1] < 0))
-                    self.debug_window.addstr(10, 0, "width >: {}".format(point[1] > self.width - 1))
+                    self.debug_window.addstr(10, 0, "width <0: {}".format(point[1] < 0))
+                    self.debug_window.addstr(11, 0, "width >: {}".format(point[1] > self.width - 1))
                     self.debug_window.refresh()
                 return True
         if self.debug:
-            self.debug_window.addstr(7, 0, " " * 20)
             self.debug_window.addstr(8, 0, " " * 20)
             self.debug_window.addstr(9, 0, " " * 20)
             self.debug_window.addstr(10, 0, " " * 20)
+            self.debug_window.addstr(11, 0, " " * 20)
             self.debug_window.refresh()
         return False
 
+    # when in contact with another piece
     def is_collision(self, next_pos):
         # Collision check from below
         for point in next_pos:
@@ -257,12 +244,15 @@ class Board(object):
         return full_rows
 
     # Update board representation and piece location
-    def update_piece_position(self, next_pos):
+    def update_piece_position(self, action, next_pos):
 
         for point in self.current_piece.location:
             self.board_state[point[0]][point[1]] = "."
 
         self.current_piece.location = next_pos
+
+        if action == curses.KEY_UP:
+            self.current_piece.orientation = (self.current_piece.orientation + 1) % 4
 
         for point in self.current_piece.location:
             self.board_state[point[0]][point[1]] = self.current_piece.symbol
@@ -302,20 +292,17 @@ class Board(object):
         for point in self.current_piece.location:
             self.board_state[point[0]][point[1]] = self.current_piece.symbol
 
-    # if the next position downward of any block is anything other
-    # than nothing or itself
-
-    # if it's at the bounds
-    # if it's touching another piece
-    # TODO: validate
+    # Determine if piece landed
     def piece_landed(self):
 
         for point in self.current_piece.location:
+            # at the bottom boundary
             if point[0] == self.height - 1:
                 return True
 
             downward = [point[0] + 1, point[1]]
 
+            # piece exists below
             if (downward not in self.current_piece.location
                and self.board_state[downward[0]][downward[1]] != "."):
 

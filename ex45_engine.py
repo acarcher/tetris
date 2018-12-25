@@ -1,7 +1,7 @@
 # Driver and state transitions
 import time
 import random
-from curses import KEY_RIGHT, KEY_LEFT, KEY_UP, KEY_DOWN, ERR
+from curses import KEY_RIGHT, KEY_LEFT, KEY_UP, KEY_DOWN, KEY_ENTER, ERR
 # from sys import exit
 
 
@@ -28,21 +28,20 @@ class Engine(object):
         if key_press == ord('q'):
             self.end()
         elif key_press in move_keys:
-            return self.board.current_piece.move(key_press)
+            return key_press, self.board.current_piece.move(key_press)
         elif key_press in rotate_key:
-            return self.board.current_piece.rotate_clockwise()
+            return key_press, self.board.current_piece.rotate_clockwise()
         else:
-            raise Exception("Key unbound")
+            # raise Exception("Key unbound")
             pass
             # TODO
 
-    # TODO: make nicer
-    def action_update(self, next_pos):
+    def action_update(self, action, next_pos):
         if not self.board.invalid_move(next_pos):  # validity check and update
             if self.board.debug:
                 self.board.debug_window.addstr(11, 0, "valid move")
                 self.board.debug_window.refresh()
-            self.board.update_piece_position(next_pos)
+            self.board.update_piece_position(action, next_pos)
         else:
             # raise Exception("Illegal move")
             # TODO
@@ -57,6 +56,21 @@ class Engine(object):
             # break FIXME
         else:
             self.board.add_new_piece(next_piece)
+
+    def piece_landed_handler(self):
+        if self.board.is_loss(self.board.current_piece):  # check for lock or block
+            self.board.game_over()  # FIXME
+            raise Exception("Game over")  # FIXME
+        else:
+            full_rows = self.board.check_rows()  # check to see if finished rows
+
+            if full_rows:  # update score and clear full rows
+                self.score += len(full_rows)
+                # self.score_window.addstr()
+                self.board.clear_full_rows(full_rows)
+            if self.board.debug:
+                self.board.debug_window.addstr(3, 0, "New piece: {} ".format(True))
+            self.new_piece_handler()
 
     # TODO
     def run(self):
@@ -73,58 +87,31 @@ class Engine(object):
                 self.board.debug_window.addstr(0, 0, "Tick: {}".format(tick))
                 self.board.debug_window.refresh()
 
-            new_piece = False
-
             self.board.draw()  # draw
 
             key_pressed = self.board.get_input()  # take input
 
-            if key_pressed != ERR and key_pressed is not None:
-                if self.board.debug:
-                    self.board.debug_window.addstr(1, 0, "Key pressed: {}".format(key_pressed))
-                    self.board.debug_window.refresh()
+            if self.board.debug:
+                self.board.debug_window.addstr(1, 0, "Key pressed: {} ".format(key_pressed))
+                self.board.debug_window.refresh()
 
-                self.action_update(self.action(key_pressed))
+            # if key_pressed != ERR and key_pressed is not None:
+            if key_pressed in (KEY_DOWN, KEY_LEFT, KEY_RIGHT, KEY_UP):
+
+                self.action_update(*self.action(key_pressed))
 
                 if self.board.piece_landed():  # piece is done moving
-                    if self.board.is_loss(self.board.current_piece):  # check for lock or block
-                        self.board.game_over()  # FIXME
-                        raise Exception("Game over")  # FIXME
-                    else:
-                        full_rows = self.board.check_rows()  # check to see if finished rows
-
-                        if full_rows:  # update score and clear full rows
-                            self.score += len(full_rows)
-                            self.board.clear_full_rows(full_rows)
-                        new_piece = True
-
-            if new_piece:  # generate and add the new piece TODO
-                self.new_piece_handler()
-                new_piece = False
+                    self.piece_landed_handler()
 
             if tick % (self.speed // self.tick_length + 1) == 0:  # default movement
-                self.action_update(self.board.gravity())
+                self.action_update(None, self.board.gravity())
                 if self.board.debug:
                     self.board.debug_window.addstr(2, 0, "Gravity: {}".format(tick))
-                    self.board.debug_window.addstr(3, 0, "New piece: {}".format(new_piece))
+                    self.board.debug_window.addstr(3, 0, "New piece: {}".format(False))
                     self.board.debug_window.refresh()
 
                 if self.board.piece_landed():  # piece is done moving
-                    if self.board.is_loss(self.board.current_piece):  # check for lock or block
-                        self.board.game_over()  # FIXME
-                        raise Exception("Game over")  # FIXME
-                    else:
-                        full_rows = self.board.check_rows()  # check to see if finished rows
-
-                        if full_rows:  # update score and clear full rows
-                            self.score += len(full_rows)
-                            self.board.clear_full_rows(full_rows)
-                        new_piece = True
-
-                # TODO
-                if new_piece:  # generate and add the new piece TODO
-                    self.new_piece_handler()
-                    new_piece = False
+                    self.piece_landed_handler()
 
             # https://stackoverflow.com/a/25251804
             time.sleep(self.tick_length - time.time() % self.tick_length)
