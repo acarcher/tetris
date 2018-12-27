@@ -165,6 +165,10 @@ class Board(object):
 
     # get the next piece
     def random_piece(self, random_int):
+        if self.debug:
+            return [Piece("I"), Piece("I"), Piece("I"), Piece("I"),
+                    Piece("I"), Piece("I"), Piece("I")][random_int]
+
         return [Piece("I"), Piece("J"), Piece("L"), Piece("O"),
                 Piece("S"), Piece("T"), Piece("Z")][random_int]
 
@@ -257,29 +261,27 @@ class Board(object):
         for point in self.current_piece.location:
             self.board_state[point[0]][point[1]] = self.current_piece.symbol
 
-    # Clear complete rows
-    # FIXME: off by one error when multiple lines cleared
-    def clear_full_rows(self, full_rows):
-        accumulated_rows = 0
+    def full(self, row):
+        return all(v != "." for v in row)
 
-        for full_row in full_rows:
-            self.board_state[full_row][:] = ["."] * len(self.board_state[full_row][:])
+    # Move rows down after clears
+    def clear_and_move_rows(self):
 
-        for row_num, row in zip(reversed(range(self.height)),
-                                self.board_state[::-1]):
+        row = self.height - 1
 
-            if row_num in full_rows:
-                accumulated_rows += 1
+        count = 0
 
-            if row_num - accumulated_rows < 0:
-                self.board_state[row_num][:] = self.board_state[0][:]
-                pass
+        while row > 0:
+            if self.debug:
+                count += 1
+                self.debug_window.addstr(10, 0, "row: {} ".format(row))
+                self.debug_window.addstr(11, 0, "count: {} ".format(count))
+                self.debug_window.refresh()
+
+            if self.full(self.board_state[row]):
+                self.board_state[0:row + 1] = [["."] * self.width] + self.board_state[0:row]
             else:
-                self.board_state[row_num][:] = self.board_state[row_num - accumulated_rows][:]
-
-        # clear all full rows
-        # work from bottom to top figuring out how many lines to
-        # move each piece by number of accumulated empty rows
+                row -= 1
 
     # Start the next piece
     def add_new_piece(self, piece):

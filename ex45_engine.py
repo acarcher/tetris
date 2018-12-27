@@ -67,7 +67,7 @@ class Engine(object):
             if full_rows:  # update score and clear full rows
                 self.score += len(full_rows)
                 # self.score_window.addstr()
-                self.board.clear_full_rows(full_rows)
+                self.clear_and_move_rows()
             if self.board.debug:
                 self.board.debug_window.addstr(3, 0, "New piece: {} ".format(True))
             self.new_piece_handler()
