@@ -1,9 +1,11 @@
 from curses import KEY_RIGHT, KEY_LEFT, KEY_DOWN
 import ex45_config
 
-
 # Base representation for each tetromino
 # Pieces can be moved and rotated
+
+CHAR = b'\xe2\x96\xa0'
+
 
 class Piece(object):
 

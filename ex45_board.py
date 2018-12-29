@@ -3,7 +3,7 @@
 import curses
 import time
 
-from ex45_piece import Piece
+from ex45_piece import Piece, CHAR
 
 
 class Board(object):
@@ -28,9 +28,10 @@ class Board(object):
         self.screen = screen
         self.border_window = None
         self.game_window = None
-        self.score_window = None
+        self.info_window = None
         self.debug_window = None
         self.current_piece = None
+        self.next_piece = None
         self.debug = debug
 
     def init_curses(self):
@@ -61,8 +62,8 @@ class Board(object):
         # larger; not initially a problem and unknown cause
         # self.game_window.scrollok(True)
 
-        self.score_window = curses.newwin(self.height, self.width,
-                                          0, x_start + self.width + 2)
+        self.info_window = curses.newwin(self.height, self.width,
+                                         0, x_start + self.width + 2)
 
         if self.debug:
             self.debug_window = curses.newwin(self.height, 45,
@@ -102,8 +103,7 @@ class Board(object):
                 for y in range(0, height + vanish)]
 
     # write the board to the terminal
-    # FIXME
-    def draw(self):
+    def draw_board(self):
         attributes = Piece.tetromino_attributes.values()
 
         for y_idx, row in enumerate(self.board_state):
@@ -111,6 +111,8 @@ class Board(object):
                 char = self.board_state[y_idx][x_idx]
 
                 # TODO: improve this logic so it it doesn't do 6 scans per char
+                # make a function that returns the correct colorpair or default
+                # TODO: convert from symbols to box char
                 for attr in attributes:
                     if char == attr[1]:
                         color = self.curses_colors[attr[0]]
@@ -119,12 +121,32 @@ class Board(object):
                         color = None
 
                 if color:
-                    self.game_window.addstr(y_idx, x_idx, b'\xe2\x96\xa0',
+                    self.game_window.addstr(y_idx, x_idx, CHAR,
                                             curses.color_pair(color))
                 else:
                     self.game_window.addstr(y_idx, x_idx, char)
 
         self.game_window.refresh()
+
+    def draw_score(self, score):
+        self.info_window.addstr(1, 0, "Score:")
+        self.info_window.addstr(2, 0, str(score))
+        self.info_window.refresh()
+
+    def draw_next_piece(self):
+        self.info_window.addstr(5, 0, "Next:")
+        first, second, third, fourth = self.get_default_location(self.next_piece,
+                                                                 6, self.width)
+
+        self.info_window.addstr(6, 0, " " * self.width)
+        self.info_window.addstr(7, 0, " " * self.width)
+
+        # TODO: color
+        self.info_window.addstr(first[0], first[1], CHAR)
+        self.info_window.addstr(second[0], second[1], CHAR)
+        self.info_window.addstr(third[0], third[1], CHAR)
+        self.info_window.addstr(fourth[0], fourth[1], CHAR)
+        self.info_window.refresh()
 
     # get user input and only one input per tick
     def get_input(self):
@@ -134,10 +156,10 @@ class Board(object):
 
     # Default location for each piece
     # http://tetris.wikia.com/wiki/SRS
-    def get_default_location(self, piece):
+    def get_default_location(self, piece, ref_pt_y, ref_pt_x):
         tetrimino = piece.tetromino
-        x_cl = self.width // 2  # center left
-        y = 1
+        y = ref_pt_y + 1
+        x_cl = ref_pt_x // 2  # center left
 
         if tetrimino == "I":
             return [[y, x_cl - 2], [y, x_cl - 1],
@@ -286,13 +308,16 @@ class Board(object):
     # Start the next piece
     def add_new_piece(self, piece):
 
-        default_location = self.get_default_location(piece)
-
-        self.current_piece = piece
+        default_location = self.get_default_location(self.next_piece,
+                                                     0, self.width)
+        self.current_piece = self.next_piece
         self.current_piece.location = default_location
 
+        # TODO: symbol?
         for point in self.current_piece.location:
             self.board_state[point[0]][point[1]] = self.current_piece.symbol
+
+        self.next_piece = piece
 
     # Determine if piece landed
     def piece_landed(self):
@@ -320,14 +345,14 @@ class Board(object):
 
         return False
 
+    # TODO: if no points inside the playable area
     def _lock_out(self):
         for point in self.current_piece.location:
             pass
-            # if no points inside the playable area TODO
 
     # http://tetris.wikia.com/wiki/Top_out
     def is_loss(self, piece):
-        default_position = self.get_default_location(piece)
+        default_position = self.get_default_location(piece, 0, self.width)
 
         if self._block_out(default_position):
             return True

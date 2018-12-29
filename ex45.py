@@ -8,7 +8,6 @@ from ex45_board import Board
 #   allows other types of losses
 # wall-kicking
 # soft dropping and hard dropping
-# multiple curses screens.. or pad
 
 
 def main(screen):

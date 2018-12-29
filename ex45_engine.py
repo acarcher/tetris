@@ -50,8 +50,12 @@ class Engine(object):
     # new piece loop
     def new_piece_handler(self, init=False):
         next_piece = self.board.random_piece(random.randint(0, 6))
+        #TODO: IMPROVE
+        if init:
+            self.board.next_piece = next_piece
+            self.board.add_new_piece(self.board.random_piece(random.randint(0, 6)))
 
-        if not init and self.board.is_loss(next_piece):
+        elif not init and self.board.is_loss(next_piece):
             self.board.game_over()
             # break FIXME
         else:
@@ -66,8 +70,8 @@ class Engine(object):
 
             if full_rows:  # update score and clear full rows
                 self.score += len(full_rows)
-                # self.score_window.addstr()
-                self.clear_and_move_rows()
+                self.board.draw_score(self.score)
+                self.board.clear_and_move_rows()
             if self.board.debug:
                 self.board.debug_window.addstr(3, 0, "New piece: {} ".format(True))
             self.new_piece_handler()
@@ -87,7 +91,9 @@ class Engine(object):
                 self.board.debug_window.addstr(0, 0, "Tick: {}".format(tick))
                 self.board.debug_window.refresh()
 
-            self.board.draw()  # draw
+            self.board.draw_board()  # draw
+            self.board.draw_score(self.score)
+            self.board.draw_next_piece()
 
             key_pressed = self.board.get_input()  # take input
 
@@ -102,6 +108,7 @@ class Engine(object):
 
                 if self.board.piece_landed():  # piece is done moving
                     self.piece_landed_handler()
+                    self.board.draw_next_piece()
 
             if tick % (self.speed // self.tick_length + 1) == 0:  # default movement
                 self.action_update(None, self.board.gravity())
