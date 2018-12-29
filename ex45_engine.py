@@ -69,7 +69,7 @@ class Engine(object):
             full_rows = self.board.check_rows()  # check to see if finished rows
 
             if full_rows:  # update score and clear full rows
-                self.score += len(full_rows)
+                self.score += self.board.calculate_score(full_rows)
                 self.board.draw_score(self.score)
                 self.board.clear_and_move_rows()
             if self.board.debug:

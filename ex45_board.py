@@ -32,6 +32,7 @@ class Board(object):
         self.debug_window = None
         self.current_piece = None
         self.next_piece = None
+        self.level = 0
         self.debug = debug
 
     def init_curses(self):
@@ -364,3 +365,14 @@ class Board(object):
     # TODO
     def game_over(self):
         pass
+
+    # https://tetris.wiki/Scoring
+    # Nintendo scoring
+    def calculate_score(self, full_rows):
+        lines_cleared = len(full_rows)
+
+        line_mult = [40, 100, 300, 1200]
+
+        score = line_mult[lines_cleared - 1] * (self.level + 1)
+
+        return score
