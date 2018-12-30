@@ -8,7 +8,7 @@ from curses import KEY_RIGHT, KEY_LEFT, KEY_UP, KEY_DOWN, KEY_ENTER, ERR
 class Engine(object):
 
     # board: board to play
-    # speed: how many seconds per action
+    # speed: how many seconds per action (period)
     # score: points earned
     # tick_length: period of the game
 
@@ -16,7 +16,10 @@ class Engine(object):
         assert(speed >= 1)
         self.board = board
         self.speed = speed
+        self.speed_mod = 0
         self.score = 0
+        self.level = 0
+        self.rows_cleared = 0
         self.tick_length = .05
 
     # Takes in key_press, returns the correct action
@@ -66,17 +69,36 @@ class Engine(object):
             self.board.game_over()  # FIXME
             raise Exception("Game over")  # FIXME
         else:
-            full_rows = self.board.check_rows()  # check to see if finished rows
+            full_rows = self.board.check_rows()
 
-            if full_rows:  # update score and clear full rows
-                self.score += self.board.calculate_score(full_rows)
+            if full_rows:
+                self.update_state(full_rows)
                 self.board.draw_score(self.score)
+                self.board.draw_level(self.level)
                 self.board.clear_and_move_rows()
+
             if self.board.debug:
                 self.board.debug_window.addstr(3, 0, "New piece: {} ".format(True))
             self.new_piece_handler()
 
-    # TODO
+    # https://tetris.wiki/Scoring
+    # Nintendo scoring
+    def calculate_score(self, full_rows):
+        lines_cleared = len(full_rows)
+
+        line_mult = [40, 100, 300, 1200]
+
+        score = line_mult[lines_cleared - 1] * (self.level + 1)
+
+        return score
+
+    def update_state(self, full_rows):
+        self.rows_cleared += len(full_rows)
+        self.level = self.rows_cleared // 5
+        self.speed_mod = self.level * self.tick_length
+        self.score += self.calculate_score(full_rows)
+
+    # TODO:
     def run(self):
 
         self.board.init_curses()
@@ -93,6 +115,7 @@ class Engine(object):
 
             self.board.draw_board()  # draw
             self.board.draw_score(self.score)
+            self.board.draw_level(self.level)
             self.board.draw_next_piece()
 
             key_pressed = self.board.get_input()  # take input
@@ -110,7 +133,7 @@ class Engine(object):
                     self.piece_landed_handler()
                     self.board.draw_next_piece()
 
-            if tick % (self.speed // self.tick_length + 1) == 0:  # default movement
+            if tick % ( (self.speed - self.speed_mod) // self.tick_length + 1) == 0:  # default movement
                 self.action_update(None, self.board.gravity())
                 if self.board.debug:
                     self.board.debug_window.addstr(2, 0, "Gravity: {}".format(tick))

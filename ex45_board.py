@@ -32,7 +32,6 @@ class Board(object):
         self.debug_window = None
         self.current_piece = None
         self.next_piece = None
-        self.level = 0
         self.debug = debug
 
     def init_curses(self):
@@ -135,18 +134,23 @@ class Board(object):
         self.info_window.refresh()
 
     def draw_next_piece(self):
-        self.info_window.addstr(5, 0, "Next:")
+        self.info_window.addstr(7, 0, "Next:")
         first, second, third, fourth = self.get_default_location(self.next_piece,
-                                                                 6, self.width)
+                                                                 8, self.width)
 
-        self.info_window.addstr(6, 0, " " * self.width)
-        self.info_window.addstr(7, 0, " " * self.width)
+        self.info_window.addstr(8, 0, " " * self.width)
+        self.info_window.addstr(9, 0, " " * self.width)
 
         # TODO: color
         self.info_window.addstr(first[0], first[1], CHAR)
         self.info_window.addstr(second[0], second[1], CHAR)
         self.info_window.addstr(third[0], third[1], CHAR)
         self.info_window.addstr(fourth[0], fourth[1], CHAR)
+        self.info_window.refresh()
+
+    def draw_level(self, level):
+        self.info_window.addstr(4, 0, "Level:")
+        self.info_window.addstr(5, 0, str(level))
         self.info_window.refresh()
 
     # get user input and only one input per tick
@@ -365,14 +369,3 @@ class Board(object):
     # TODO
     def game_over(self):
         pass
-
-    # https://tetris.wiki/Scoring
-    # Nintendo scoring
-    def calculate_score(self, full_rows):
-        lines_cleared = len(full_rows)
-
-        line_mult = [40, 100, 300, 1200]
-
-        score = line_mult[lines_cleared - 1] * (self.level + 1)
-
-        return score
