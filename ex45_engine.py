@@ -1,8 +1,9 @@
 # Driver and state transitions
 import time
 import random
-from curses import KEY_RIGHT, KEY_LEFT, KEY_UP, KEY_DOWN, KEY_ENTER, ERR
-# from sys import exit
+import curses
+from curses import KEY_RIGHT, KEY_LEFT, KEY_UP, KEY_DOWN
+from sys import exit
 
 
 class Engine(object):
@@ -17,10 +18,12 @@ class Engine(object):
         self.board = board
         self.speed = speed
         self.speed_mod = 0
+        self.tick = 0
+        self.tick_length = .05
         self.score = 0
         self.level = 0
         self.rows_cleared = 0
-        self.tick_length = .05
+        self.game_over = False
 
     # Takes in key_press, returns the correct action
     def action(self, key_press):
@@ -29,7 +32,7 @@ class Engine(object):
         rotate_key = (KEY_UP,)
 
         if key_press == ord('q'):
-            self.end()
+            self.exit_game()
         elif key_press in move_keys:
             return key_press, self.board.current_piece.move(key_press)
         elif key_press in rotate_key:
@@ -53,21 +56,23 @@ class Engine(object):
     # new piece loop
     def new_piece_handler(self, init=False):
         next_piece = self.board.random_piece(random.randint(0, 6))
-        #TODO: IMPROVE
+        # TODO: IMPROVE
         if init:
             self.board.next_piece = next_piece
             self.board.add_new_piece(self.board.random_piece(random.randint(0, 6)))
 
         elif not init and self.board.is_loss(next_piece):
-            self.board.game_over()
-            # break FIXME
+            self.game_over = True
+            return
+            # TODO: verify this is enough to properly quit
         else:
             self.board.add_new_piece(next_piece)
 
     def piece_landed_handler(self):
         if self.board.is_loss(self.board.current_piece):  # check for lock or block
-            self.board.game_over()  # FIXME
-            raise Exception("Game over")  # FIXME
+            self.game_over = True
+            return
+            # TODO: verify this is enough to properly quit
         else:
             full_rows = self.board.check_rows()
 
@@ -79,6 +84,7 @@ class Engine(object):
 
             if self.board.debug:
                 self.board.debug_window.addstr(3, 0, "New piece: {} ".format(True))
+
             self.new_piece_handler()
 
     # https://tetris.wiki/Scoring
@@ -98,51 +104,84 @@ class Engine(object):
         self.speed_mod = self.level * self.tick_length
         self.score += self.calculate_score(full_rows)
 
-    # TODO:
-    def run(self):
+    def reset_engine_state(self):
+        self.rows_cleared = 0
+        self.level = 0
+        self.speed_mod = 0
+        self.score = 0
+        self.tick = 0
+        self.game_over = False
 
-        self.board.init_curses()
+    def game_over_handler(self):
+        self.board.draw_game_over()
 
-        tick = 0
-        game_over = False
-        key_pressed = None
-        self.new_piece_handler(True)
+        self.board.game_window.nodelay(False)
 
-        while(not game_over):
+        while(self.game_over):
+            key = self.board.get_input()
+
+            if key == ord('y'):
+                self.board.game_window.nodelay(True)
+                self.reset_engine_state()
+                self.board.reset_board_state()
+            elif key == ord('n'):
+                self.board.game_window.nodelay(True)
+                self.exit_game()
+            else:
+                continue
+
+    def control_loop(self):
+
+        while(not self.game_over):
             if self.board.debug:
-                self.board.debug_window.addstr(0, 0, "Tick: {}".format(tick))
+                self.board.debug_window.addstr(0, 0, "Tick: {}".format(self.tick))
                 self.board.debug_window.refresh()
 
-            self.board.draw_board()  # draw
+            self.board.draw_board()
             self.board.draw_score(self.score)
             self.board.draw_level(self.level)
             self.board.draw_next_piece()
 
-            key_pressed = self.board.get_input()  # take input
+            key_pressed = self.board.get_input()
 
             if self.board.debug:
                 self.board.debug_window.addstr(1, 0, "Key pressed: {} ".format(key_pressed))
                 self.board.debug_window.refresh()
 
             # if key_pressed != ERR and key_pressed is not None:
-            if key_pressed in (KEY_DOWN, KEY_LEFT, KEY_RIGHT, KEY_UP):
+            if key_pressed in (KEY_DOWN, KEY_LEFT, KEY_RIGHT, KEY_UP, ord('q')):
 
                 self.action_update(*self.action(key_pressed))
 
-                if self.board.piece_landed():  # piece is done moving
+                if self.board.piece_landed():
                     self.piece_landed_handler()
                     self.board.draw_next_piece()
 
-            if tick % ( (self.speed - self.speed_mod) // self.tick_length + 1) == 0:  # default movement
+            if self.tick % ((self.speed - self.speed_mod)
+               // self.tick_length + 1) == 0:  # default movement
+
                 self.action_update(None, self.board.gravity())
                 if self.board.debug:
-                    self.board.debug_window.addstr(2, 0, "Gravity: {}".format(tick))
+                    self.board.debug_window.addstr(2, 0, "Gravity: {}".format(self.tick))
                     self.board.debug_window.addstr(3, 0, "New piece: {}".format(False))
                     self.board.debug_window.refresh()
 
-                if self.board.piece_landed():  # piece is done moving
+                if self.board.piece_landed():
                     self.piece_landed_handler()
 
             # https://stackoverflow.com/a/25251804
             time.sleep(self.tick_length - time.time() % self.tick_length)
-            tick += 1
+            self.tick += 1
+
+    # TODO: get this called for keyboard interrupts
+    def exit_game(self):
+        exit(0)
+
+    def run(self):
+
+        self.board.init_curses()
+        self.new_piece_handler(True)
+
+        while(True):
+            self.control_loop()
+            self.game_over_handler()

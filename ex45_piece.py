@@ -8,7 +8,7 @@ CHAR = b'\xe2\x96\xa0'
 
 
 class Piece(object):
-
+    # TODO: remove the character and anything that relies on it
     tetromino_attributes = {
         "I": ("cyan", "@", 4),
         "J": ("blue", "#", 3),

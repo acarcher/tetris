@@ -24,7 +24,8 @@ class Board(object):
         assert(height / 2 == width)
         self.height = height
         self.width = width
-        self.board_state = self.create_state(height, width, vanish_zone)
+        self.vanish_zone = vanish_zone
+        self.board_state = self.init_state()
         self.screen = screen
         self.border_window = None
         self.game_window = None
@@ -98,9 +99,12 @@ class Board(object):
                          curses.COLOR_BLACK)
 
     # Physical representation of the board and borders
-    def create_state(self, height, width, vanish):
-        return [["." for x in range(0, width)]
-                for y in range(0, height + vanish)]
+    def init_state(self):
+        return [["." for x in range(0, self.width)]
+                for y in range(0, self.height + self.vanish_zone)]
+
+    def reset_board_state(self):
+        self.board_state = self.init_state()
 
     # write the board to the terminal
     def draw_board(self):
@@ -152,6 +156,22 @@ class Board(object):
         self.info_window.addstr(4, 0, "Level:")
         self.info_window.addstr(5, 0, str(level))
         self.info_window.refresh()
+
+    # TODO
+    def draw_game_over(self):
+        for y in range(0, self.height):
+            for x in range(0, self.width):
+                self.game_window.addstr(y, x, " ")
+
+        start_height = (self.height - 1) // 2
+        start_width = self.width // 2
+
+        self.game_window.addstr(start_height, start_width - (len("Game over") + 1) // 2,
+                                "Game over")
+        self.game_window.addstr(start_height + 2, start_width - (len("Continue?") + 1) // 2,
+                                "Continue?")
+        self.game_window.addstr(start_height + 3, start_width - (len("y/n") + 1) // 2,
+                                "y/n")
 
     # get user input and only one input per tick
     def get_input(self):
@@ -210,7 +230,7 @@ class Board(object):
             out_of_bounds = False
             collision = False
 
-            self.debug_window.addstr(7, 0, "next_pos: {}       ".format(next_pos))
+            self.debug_window.addstr(6, 0, "next_pos: {}       ".format(next_pos))
             self.debug_window.refresh()
 
             out_of_bounds = self.is_oob(next_pos)
@@ -223,7 +243,7 @@ class Board(object):
 
             collision = self.is_collision(next_pos)
 
-            self.debug_window.addstr(6, 0, "collision: {}".format(collision))
+            self.debug_window.addstr(5, 0, "collision: {}".format(collision))
             self.debug_window.refresh()
 
             return out_of_bounds or collision
@@ -292,10 +312,10 @@ class Board(object):
         return all(v != "." for v in row)
 
     # Move rows down after clears
+    # Credit: Michael Stikkel
     def clear_and_move_rows(self):
 
         row = self.height - 1
-
         count = 0
 
         while row > 0:
@@ -365,7 +385,3 @@ class Board(object):
             return True
         else:
             return False
-
-    # TODO
-    def game_over(self):
-        pass
