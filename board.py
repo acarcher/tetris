@@ -4,7 +4,7 @@
 import curses
 import random
 
-from ex45_piece import Piece, CHAR
+from piece import Piece, CHAR
 
 # TODO 4: # COLOR_DEFAULT = 8
 

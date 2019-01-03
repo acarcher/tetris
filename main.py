@@ -1,7 +1,7 @@
 from curses import wrapper
 
-from ex45_engine import Engine
-from ex45_board import Board
+from engine import Engine
+from board import Board
 
 # FIXME 1: The game_window scrolls up by one line or fails when height is not
 # + 1 greater than area being written to, also forces border window to be

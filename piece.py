@@ -1,6 +1,6 @@
 from curses import KEY_RIGHT, KEY_LEFT, KEY_DOWN
 
-import ex45_config
+import config
 
 # Base representation for each tetromino
 # Pieces can be moved and rotated
@@ -32,13 +32,13 @@ class Piece(object):
     }
 
     tetromino_orientations = {
-        "I": ex45_config.i_rotate_map,
-        "J": ex45_config.j_rotate_map,
-        "L": ex45_config.l_rotate_map,
-        "O": ex45_config.o_rotate_map,
-        "S": ex45_config.s_rotate_map,
-        "T": ex45_config.t_rotate_map,
-        "Z": ex45_config.z_rotate_map
+        "I": config.i_rotate_map,
+        "J": config.j_rotate_map,
+        "L": config.l_rotate_map,
+        "O": config.o_rotate_map,
+        "S": config.s_rotate_map,
+        "T": config.t_rotate_map,
+        "Z": config.z_rotate_map
     }
 
     def __init__(self, tetromino, location=None):
