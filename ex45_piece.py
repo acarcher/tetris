@@ -1,4 +1,5 @@
 from curses import KEY_RIGHT, KEY_LEFT, KEY_DOWN
+
 import ex45_config
 
 # Base representation for each tetromino
@@ -8,7 +9,7 @@ CHAR = b'\xe2\x96\xa0'
 
 
 class Piece(object):
-    # TODO: remove the character and anything that relies on it
+
     tetromino_attributes = {
         "I": ("cyan", "@", 4),
         "J": ("blue", "#", 3),
@@ -19,14 +20,25 @@ class Piece(object):
         "Z": ("red", "=", 3)
     }
 
+    symbol_to_color = {
+        "@": "cyan",
+        "#": "blue",
+        "$": "white",
+        "%": "yellow",
+        "&": "green",
+        "+": "magenta",
+        "=": "red",
+        "default": "default"
+    }
+
     tetromino_orientations = {
-        "I": ex45_config.i_map,
-        "J": ex45_config.j_map,
-        "L": ex45_config.l_map,
-        "O": ex45_config.o_map,
-        "S": ex45_config.s_map,
-        "T": ex45_config.t_map,
-        "Z": ex45_config.z_map
+        "I": ex45_config.i_rotate_map,
+        "J": ex45_config.j_rotate_map,
+        "L": ex45_config.l_rotate_map,
+        "O": ex45_config.o_rotate_map,
+        "S": ex45_config.s_rotate_map,
+        "T": ex45_config.t_rotate_map,
+        "Z": ex45_config.z_rotate_map
     }
 
     def __init__(self, tetromino, location=None):

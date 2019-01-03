@@ -1,39 +1,53 @@
 # Display and controls
 # A board takes input
+
 import curses
-import time
+import random
 
 from ex45_piece import Piece, CHAR
+
+# TODO 4: # COLOR_DEFAULT = 8
 
 
 class Board(object):
 
-    curses_colors = {
+    curses_colors_map = {
         "cyan": curses.COLOR_CYAN,
         "blue": curses.COLOR_BLUE,
         "white": curses.COLOR_WHITE,
         "yellow": curses.COLOR_YELLOW,
         "green": curses.COLOR_GREEN,
         "magenta": curses.COLOR_MAGENTA,
-        "red": curses.COLOR_RED
+        "red": curses.COLOR_RED,
+        "default": -1
     }
 
     def __init__(self, screen, height=20, width=10, vanish_zone=0, debug=False):
-        assert(height % 2 == 0)
-        assert(width % 2 == 0)
-        assert(height / 2 == width)
+
+        if height % 2 != 0:
+            raise ValueError("Height must be even")
+        if width % 2 != 0:
+            raise ValueError("Width must be even")
+        if height / 2 != width:
+            raise ValueError("Width must be half of height")
+
+        self.screen = screen
+
         self.height = height
         self.width = width
         self.vanish_zone = vanish_zone
-        self.board_state = self.init_state()
-        self.screen = screen
+        self.debug = debug
+
+        self.board_state = self.init_board_state()
+        self.current_piece = self.random_piece()
+        self.next_piece = self.random_piece()
+
         self.border_window = None
         self.game_window = None
         self.info_window = None
         self.debug_window = None
-        self.current_piece = None
-        self.next_piece = None
-        self.debug = debug
+
+        self.init_curses()
 
     def init_curses(self):
 
@@ -58,10 +72,7 @@ class Board(object):
         self.game_window.keypad(True)
         self.game_window.nodelay(True)
 
-        # FIXME: The game_window scrolls up by one line or fails when height is not
-        # + 1 greater than area being written to, also forces border window to be
-        # larger; not initially a problem and unknown cause
-        # self.game_window.scrollok(True)
+        # FIXME 1: self.game_window.scrollok(True)
 
         self.info_window = curses.newwin(self.height, self.width,
                                          0, x_start + self.width + 2)
@@ -69,6 +80,7 @@ class Board(object):
         if self.debug:
             self.debug_window = curses.newwin(self.height, 45,
                                               0, x_start + self.width * 2 + 2)
+        # TODO 4: curses.use_default_colors()
 
         curses.init_pair(curses.COLOR_CYAN,
                          curses.COLOR_CYAN,
@@ -98,31 +110,32 @@ class Board(object):
                          curses.COLOR_RED,
                          curses.COLOR_BLACK)
 
+        # TODO 4: Own attempt at creating a default
+        #
+        # curses.init_pair(COLOR_DEFAULT,
+        #                  curses.COLOR_WHITE,
+        #                  curses.COLOR_BLACK)
+
+        # TODO 4: Default supplied by terminal
+        # curses.init_pair(COLOR_DEFAULT,
+        #                  -1,
+        #                  -1)
+
     # Physical representation of the board and borders
-    def init_state(self):
+    def init_board_state(self):
         return [["." for x in range(0, self.width)]
                 for y in range(0, self.height + self.vanish_zone)]
 
     def reset_board_state(self):
-        self.board_state = self.init_state()
+        self.board_state = self.init_board_state()
 
     # write the board to the terminal
     def draw_board(self):
-        attributes = Piece.tetromino_attributes.values()
-
         for y_idx, row in enumerate(self.board_state):
             for x_idx, col in enumerate(row):
-                char = self.board_state[y_idx][x_idx]
 
-                # TODO: improve this logic so it it doesn't do 6 scans per char
-                # make a function that returns the correct colorpair or default
-                # TODO: convert from symbols to box char
-                for attr in attributes:
-                    if char == attr[1]:
-                        color = self.curses_colors[attr[0]]
-                        break
-                    else:
-                        color = None
+                char = self.board_state[y_idx][x_idx]
+                color = self.get_piece_color(char)
 
                 if color:
                     self.game_window.addstr(y_idx, x_idx, CHAR,
@@ -131,6 +144,16 @@ class Board(object):
                     self.game_window.addstr(y_idx, x_idx, char)
 
         self.game_window.refresh()
+
+    def get_piece_color(self, symbol):
+
+        if symbol in ("@", "#", "$", "%", "&", "+", "="):
+            color_name = Piece.symbol_to_color[symbol]
+        else:
+            # TODO 4: color_name = Piece.symbol_to_color["default"]
+            return None
+
+        return self.curses_colors_map[color_name]
 
     def draw_score(self, score):
         self.info_window.addstr(1, 0, "Score:")
@@ -145,11 +168,17 @@ class Board(object):
         self.info_window.addstr(8, 0, " " * self.width)
         self.info_window.addstr(9, 0, " " * self.width)
 
-        # TODO: color
-        self.info_window.addstr(first[0], first[1], CHAR)
-        self.info_window.addstr(second[0], second[1], CHAR)
-        self.info_window.addstr(third[0], third[1], CHAR)
-        self.info_window.addstr(fourth[0], fourth[1], CHAR)
+        color = self.get_piece_color(self.next_piece.symbol)
+
+        self.info_window.addstr(first[0], first[1], CHAR,
+                                curses.color_pair(color))
+        self.info_window.addstr(second[0], second[1], CHAR,
+                                curses.color_pair(color))
+        self.info_window.addstr(third[0], third[1], CHAR,
+                                curses.color_pair(color))
+        self.info_window.addstr(fourth[0], fourth[1], CHAR,
+                                curses.color_pair(color))
+
         self.info_window.refresh()
 
     def draw_level(self, level):
@@ -157,7 +186,6 @@ class Board(object):
         self.info_window.addstr(5, 0, str(level))
         self.info_window.refresh()
 
-    # TODO
     def draw_game_over(self):
         for y in range(0, self.height):
             for x in range(0, self.width):
@@ -208,16 +236,15 @@ class Board(object):
             return [[y - 1, x_cl - 2], [y - 1, x_cl - 1],
                     [y, x_cl - 1], [y, x_cl]]
         else:
-            raise Exception("Incorrect tetrimino")
+            raise ValueError("Incorrect tetrimino")
 
     # get the next piece
-    def random_piece(self, random_int):
+    def random_piece(self):
         if self.debug:
-            return [Piece("I"), Piece("I"), Piece("I"), Piece("I"),
-                    Piece("I"), Piece("I"), Piece("I")][random_int]
+            return Piece("I")
 
         return [Piece("I"), Piece("J"), Piece("L"), Piece("O"),
-                Piece("S"), Piece("T"), Piece("Z")][random_int]
+                Piece("S"), Piece("T"), Piece("Z")][random.randint(0, 6)]
 
     # Default piece movement
     def gravity(self):
@@ -338,11 +365,13 @@ class Board(object):
         self.current_piece = self.next_piece
         self.current_piece.location = default_location
 
-        # TODO: symbol?
-        for point in self.current_piece.location:
-            self.board_state[point[0]][point[1]] = self.current_piece.symbol
+        self.add_piece_to_board(self.current_piece)
 
         self.next_piece = piece
+
+    def add_piece_to_board(self, piece):
+        for point in piece.location:
+            self.board_state[point[0]][point[1]] = piece.symbol
 
     # Determine if piece landed
     def piece_landed(self):
@@ -370,7 +399,7 @@ class Board(object):
 
         return False
 
-    # TODO: if no points inside the playable area
+    # TODO 1: if no points inside the playable area
     def _lock_out(self):
         for point in self.current_piece.location:
             pass
