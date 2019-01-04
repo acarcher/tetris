@@ -1,6 +1,6 @@
 # Tetris Clone
 
-A tetris clone terminal game written in Python3 using the curses module.
+A tetris terminal game written in Python 3 using the builtin curses module (a Python wrapper for the C ncurses library). I focused on object-oriented programming and having clean easy-to-read code spread over multiple files.
 
 ![Demo](tetris_demo.gif)
 
@@ -14,10 +14,10 @@ Python >=3.5.2
 
 ### Running the program
 
-To run the program, type
+To run the program, type:
 
 ```
-python main.py
+python3 main.py
 ```
 
 For best results, use Ubuntu's GNOME terminal and a monospace font.
@@ -28,7 +28,7 @@ Monospace font can be achieved by:
 > edit profile preferences
 > general tab
 > tick custom font
-> monospace of your choice
+> monospace font of your choice (I used monospace regular in 12pt)
 ```
 
 ### Controls
