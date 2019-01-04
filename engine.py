@@ -12,11 +12,13 @@ class Engine(object):
     # tick_length: period of the game
 
     def __init__(self, board, speed):
-        if speed < 1:
-            raise ValueError("Speed must be at least 1")
+
+        if speed < 0:
+            raise ValueError("Speed cannot be negative")
 
         self.board = board
         self.speed = speed
+
         self.speed_mod = 0
         self.tick = 0
         self.tick_length = .05
@@ -89,7 +91,7 @@ class Engine(object):
 
     def update_state(self, full_rows):
         self.rows_cleared += len(full_rows)
-        self.level = self.rows_cleared // 5
+        self.level = self.rows_cleared // 5 if self.rows_cleared // 5 < 10 else 10
         self.speed_mod = self.level * self.tick_length
         self.score += self.calculate_score(full_rows)
 

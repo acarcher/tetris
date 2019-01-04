@@ -157,6 +157,7 @@ class Board(object):
 
     def draw_score(self, score):
         self.info_window.addstr(1, 0, "Score:")
+        self.info_window.addstr(2, 0, " " * self.width)
         self.info_window.addstr(2, 0, str(score))
         self.info_window.refresh()
 
@@ -183,6 +184,7 @@ class Board(object):
 
     def draw_level(self, level):
         self.info_window.addstr(4, 0, "Level:")
+        self.info_window.addstr(5, 0, " " * self.width)
         self.info_window.addstr(5, 0, str(level))
         self.info_window.refresh()
 

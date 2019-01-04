@@ -24,10 +24,12 @@ from board import Board
 
 # TODO 6: Document, rename, reorder, PEP8-ify
 
+# TODO 7: Make force dropping increase score
+
 
 def main(screen):
     board = Board(screen, debug=False)
-    game = Engine(board, 1)
+    game = Engine(board, .75)  # .75 is the speed, lower is harder, higher is easier
     game.run()
 
 
