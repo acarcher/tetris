@@ -2,7 +2,7 @@ from curses import wrapper
 
 from engine import Engine
 from board import Board
-from config import SPEED, DEBUG
+from config import SPEED, DEBUG, TICK_LENGTH
 
 # FIXME 1: The game_window scrolls up by one line or fails when height is not
 # + 1 greater than area being written to, also forces border window to be
@@ -17,16 +17,21 @@ from config import SPEED, DEBUG
 # TODO 3: Soft dropping and hard dropping
 
 # TODO 4: Find what the default background color is when wrapper inits
-# and how that interacts with the curses.use_default_colors() call, in an
-# attempt to make the program display similarly regardless of terminal
+# and how that interacts with the curses.use_default_colors() call, for proper
+# cross-platform, cross-terminal display
 
 # TODO 5: Better debugging
-#   * separate debugger that has access to windows and handles curses directly
+#   * separate debugger/logger that has access to windows and handles curses directly
 
 # TODO 6: Document, rename, reorder, PEP8-ify
 
 # TODO 7: Make force dropping increase score
 
+# TODO 8: Add counter-clockwise rotation
+
+# TODO 9: Add generic rotation algorithm
+
+# Curses references:
 # https://docs.python.org/3.6/library/curses.html
 # https://docs.python.org/3/howto/curses.html
 
@@ -34,7 +39,7 @@ from config import SPEED, DEBUG
 def main(screen):
 
     board = Board(screen, debug=DEBUG)
-    game = Engine(board, SPEED)
+    game = Engine(board, SPEED, TICK_LENGTH)
     game.run()
 
 

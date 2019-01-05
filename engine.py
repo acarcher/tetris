@@ -11,24 +11,35 @@ class Engine(object):
     # score: points earned
     # tick_length: period of the game
 
-    def __init__(self, board, speed):
+    def __init__(self, board, speed, tick_length):
 
         if speed < 0:
             raise ValueError("Speed cannot be negative")
 
         self.board = board
         self.speed = speed
+        self.tick_length = tick_length
+        self.max_level = speed // tick_length
 
         self.speed_mod = 0
         self.tick = 0
-        self.tick_length = .05
         self.score = 0
         self.level = 0
         self.rows_cleared = 0
         self.game_over = False
 
+    def run(self):
+
+        try:
+            while(True):
+                self._loop_game_logic()
+                self._handle_game_over()
+
+        except KeyboardInterrupt:
+            self._exit_game()
+
     # Takes in key_press, returns the correct action
-    def dispatch_action(self, key_press):
+    def _dispatch_action(self, key_press):
 
         move_keys = (KEY_RIGHT, KEY_LEFT, KEY_DOWN)
 
@@ -43,8 +54,27 @@ class Engine(object):
         else:
             raise ValueError("Key not bound")
 
+    def _handle_piece_landed(self):
+
+        if self.board.is_loss(self.board.current_piece):  # check for lock or block
+            self.game_over = True
+            return
+        else:
+            full_rows = self.board.check_rows()
+
+            if full_rows:
+                self._update_state(full_rows)
+                self.board.draw_score(self.score)
+                self.board.draw_level(self.level)
+                self.board.clear_and_move_rows()
+
+            if self.board.debug:
+                self.board.debug_window.addstr(3, 0, "New piece: {} ".format(True))
+
+            self._handle_new_piece()
+
     # new piece loop
-    def handle_new_piece(self):
+    def _handle_new_piece(self):
 
         next_piece = self.board.generate_rand_piece()
 
@@ -54,54 +84,7 @@ class Engine(object):
         else:
             self.board.add_new_piece(next_piece)
 
-    def handle_piece_landed(self):
-
-        if self.board.is_loss(self.board.current_piece):  # check for lock or block
-            self.game_over = True
-            return
-        else:
-            full_rows = self.board.check_rows()
-
-            if full_rows:
-                self.update_state(full_rows)
-                self.board.draw_score(self.score)
-                self.board.draw_level(self.level)
-                self.board.clear_and_move_rows()
-
-            if self.board.debug:
-                self.board.debug_window.addstr(3, 0, "New piece: {} ".format(True))
-
-            self.handle_new_piece()
-
-    # https://tetris.wiki/Scoring
-    # Nintendo scoring
-    def calculate_score(self, full_rows):
-
-        lines_cleared = len(full_rows)
-
-        line_mult = [40, 100, 300, 1200]
-
-        score = line_mult[lines_cleared - 1] * (self.level + 1)
-
-        return score
-
-    def update_state(self, full_rows):
-
-        self.rows_cleared += len(full_rows)
-        self.level = self.rows_cleared // 5 if self.rows_cleared // 5 < 10 else 10
-        self.speed_mod = self.level * self.tick_length
-        self.score += self.calculate_score(full_rows)
-
-    def reset_engine_state(self):
-
-        self.rows_cleared = 0
-        self.level = 0
-        self.speed_mod = 0
-        self.score = 0
-        self.tick = 0
-        self.game_over = False
-
-    def handle_game_over(self):
+    def _handle_game_over(self):
 
         self.board.draw_game_over()
 
@@ -112,7 +95,7 @@ class Engine(object):
 
             if key == ord('y'):
                 self.board.game_window.nodelay(True)
-                self.reset_engine_state()
+                self._reset_engine_state()
                 self.board.reset_board_state()
             elif key == ord('n'):
                 self.board.game_window.nodelay(True)
@@ -120,7 +103,41 @@ class Engine(object):
             else:
                 continue
 
-    def loop_game_logic(self):
+    def _exit_game(self):
+
+        exit(0)
+
+    def _reset_engine_state(self):
+
+        self.rows_cleared = 0
+        self.level = 0
+        self.speed_mod = 0
+        self.score = 0
+        self.tick = 0
+        self.game_over = False
+
+    def _update_state(self, full_rows):
+
+        self.rows_cleared += len(full_rows)
+        self.level = self._calculate_level()
+        self.speed_mod = self.level * self.tick_length
+        self.score += self._calculate_score(full_rows)
+
+    def _calculate_level(self):
+        return self.rows_cleared // 5 if self.rows_cleared // 5 < self.max_level else self.max_level
+
+    # https://tetris.wiki/Scoring
+    # Nintendo scoring
+    def _calculate_score(self, full_rows):
+
+        lines_cleared = len(full_rows)
+        line_mult = [40, 100, 300, 1200]
+
+        score = line_mult[lines_cleared - 1] * (self.level + 1)
+
+        return score
+
+    def _loop_game_logic(self):
 
         self.board.add_new_piece(self.board.generate_rand_piece())
 
@@ -142,10 +159,10 @@ class Engine(object):
 
             if key_pressed in (KEY_DOWN, KEY_LEFT, KEY_RIGHT, KEY_UP, ord('q')):
 
-                self.board.check_and_update(*self.dispatch_action(key_pressed))
+                self.board.check_and_update(*self._dispatch_action(key_pressed))
 
                 if self.board.check_piece_landed():
-                    self.handle_piece_landed()
+                    self._handle_piece_landed()
                     self.board.draw_next_piece()
 
             if self.tick % ((self.speed - self.speed_mod)
@@ -158,22 +175,8 @@ class Engine(object):
                     self.board.debug_window.refresh()
 
                 if self.board.check_piece_landed():
-                    self.handle_piece_landed()
+                    self._handle_piece_landed()
 
             # https://stackoverflow.com/a/25251804
             time.sleep(self.tick_length - time.time() % self.tick_length)
             self.tick += 1
-
-    def exit_game(self):
-
-        exit(0)
-
-    def run(self):
-
-        try:
-            while(True):
-                self.loop_game_logic()
-                self.handle_game_over()
-
-        except KeyboardInterrupt:
-            self.exit_game()

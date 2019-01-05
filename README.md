@@ -1,6 +1,6 @@
 # Tetris Clone
 
-A tetris terminal game written in Python 3 using the builtin curses module (a Python wrapper for the C ncurses library). I focused on object-oriented programming and having clean easy-to-read code spread over multiple files.
+A tetris terminal game written in Python 3 using the builtin curses module (a Python wrapper for the C ncurses library). I focused on object-oriented programming and having clean easy-to-read code spread over multiple files/modules.
 
 ![Demo](tetris_demo.gif)
 

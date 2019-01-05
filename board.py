@@ -149,16 +149,6 @@ class Board(object):
 
         self.game_window.refresh()
 
-    def _get_piece_color(self, symbol):
-
-        if symbol in ("@", "#", "$", "%", "&", "+", "="):
-            color_name = Piece.symbol_to_color[symbol]
-        else:
-            # TODO 4: color_name = Piece.symbol_to_color["default"]
-            return None
-
-        return self.curses_colors_map[color_name]
-
     def draw_score(self, score):
 
         self.info_window.addstr(1, 0, "Score:")
@@ -170,7 +160,7 @@ class Board(object):
 
         self.info_window.addstr(7, 0, "Next:")
         first, second, third, fourth = self._get_default_location(self.next_piece,
-                                                                 8, self.width)
+                                                                  8, self.width)
 
         self.info_window.addstr(8, 0, " " * self.width)
         self.info_window.addstr(9, 0, " " * self.width)
@@ -218,6 +208,149 @@ class Board(object):
         curses.flushinp()
         return char
 
+    def check_and_update(self, action, next_pos):
+
+        if not self._is_invalid_move(next_pos):  # validity check and update
+            if self.debug:
+                self.debug_window.addstr(11, 0, "valid move")
+                self.debug_window.refresh()
+
+            self._update_piece_position(action, next_pos)
+
+    # Update board representation and piece location
+    def _update_piece_position(self, action, next_pos):
+
+        for point in self.current_piece.location:
+            self.board_state[point[0]][point[1]] = "."
+
+        self.current_piece.location = next_pos
+
+        if action == curses.KEY_UP:
+            self.current_piece.orientation = (self.current_piece.orientation + 1) % 4
+
+        for point in self.current_piece.location:
+            self.board_state[point[0]][point[1]] = self.current_piece.symbol
+
+    # Check for a complete row
+    def check_rows(self):
+        full_rows = []
+
+        for i, row in enumerate(self.board_state):
+            if "." not in row:
+                full_rows.append(i)
+
+        return full_rows
+
+    # Move rows down after clears
+    # Credit: Michael Stikkel
+    def clear_and_move_rows(self):
+
+        row = self.height - 1
+        count = 0
+
+        while row > 0:
+            if self.debug:
+                count += 1
+                self.debug_window.addstr(10, 0, "row: {} ".format(row))
+                self.debug_window.addstr(11, 0, "count: {} ".format(count))
+                self.debug_window.refresh()
+
+            if self._is_full(self.board_state[row]):
+                self.board_state[0:row + 1] = [["."] * self.width] + self.board_state[0:row]
+            else:
+                row -= 1
+
+    # Credit: Michael Stikkel
+    def _is_full(self, row):
+
+        return all(v != "." for v in row)
+
+    # http://tetris.wikia.com/wiki/Top_out
+    def is_loss(self, piece):
+
+        default_position = self._get_default_location(piece, 0, self.width)
+
+        if self._is_block_out(default_position):
+            return True
+        elif self._is_lock_out():
+            return True
+        else:
+            return False
+
+    # Determine if default blocks are occupied
+    def _is_block_out(self, default_position=[]):
+
+        for point in default_position:
+            if self.board_state[point[0]][point[1]] is not ".":
+                return True
+
+        return False
+
+    # TODO 1: if no points inside the playable area
+    def _is_lock_out(self):
+
+        for point in self.current_piece.location:
+            pass
+
+    # Start the next piece
+    def add_new_piece(self, piece):
+
+        default_location = self._get_default_location(self.next_piece,
+                                                      0, self.width)
+        self.current_piece = self.next_piece
+        self.current_piece.location = default_location
+
+        self._add_piece_to_board(self.current_piece)
+
+        self.next_piece = piece
+
+    def _add_piece_to_board(self, piece):
+
+        for point in piece.location:
+            self.board_state[point[0]][point[1]] = piece.symbol
+
+    # get the next piece
+    def generate_rand_piece(self):
+
+        if self.debug:
+            return Piece("I")
+
+        return [Piece("I"), Piece("J"), Piece("L"), Piece("O"),
+                Piece("S"), Piece("T"), Piece("Z")][random.randint(0, 6)]
+
+    # Default piece movement
+    def apply_gravity(self):
+
+        return self.current_piece.move(curses.KEY_DOWN)
+
+    # Determine if piece landed
+    def check_piece_landed(self):
+
+        for point in self.current_piece.location:
+            # at the bottom boundary
+            if point[0] == self.height - 1:
+                return True
+
+            downward = [point[0] + 1, point[1]]
+
+            # piece exists below
+            if (downward not in self.current_piece.location
+               and self.board_state[downward[0]][downward[1]] != "."):
+
+                return True
+
+        return False
+
+    def _get_piece_color(self, symbol):
+
+        if symbol in ("@", "#", "$", "%", "&", "+", "="):
+            color_name = Piece.symbol_to_color[symbol]
+        else:
+            # TODO 4: color_name = Piece.symbol_to_color["default"]
+            return None
+
+        return self.curses_colors_map[color_name]
+
     # Default location for each piece
     # http://tetris.wikia.com/wiki/SRS
     def _get_default_location(self, piece, ref_pt_y, ref_pt_x):
@@ -249,20 +382,6 @@ class Board(object):
                     [y, x_cl - 1], [y, x_cl]]
         else:
             raise ValueError("Incorrect tetrimino")
-
-    # get the next piece
-    def generate_rand_piece(self):
-
-        if self.debug:
-            return Piece("I")
-
-        return [Piece("I"), Piece("J"), Piece("L"), Piece("O"),
-                Piece("S"), Piece("T"), Piece("Z")][random.randint(0, 6)]
-
-    # Default piece movement
-    def apply_gravity(self):
-
-        return self.current_piece.move(curses.KEY_DOWN)
 
     # Check for collisions and OOB
     def _is_invalid_move(self, next_pos):
@@ -324,122 +443,3 @@ class Board(object):
 
                 return True
         return False
-
-    # Check for a complete row
-    def check_rows(self):
-        full_rows = []
-
-        for i, row in enumerate(self.board_state):
-            if "." not in row:
-                full_rows.append(i)
-
-        return full_rows
-
-    # Update board representation and piece location
-    def _update_piece_position(self, action, next_pos):
-
-        for point in self.current_piece.location:
-            self.board_state[point[0]][point[1]] = "."
-
-        self.current_piece.location = next_pos
-
-        if action == curses.KEY_UP:
-            self.current_piece.orientation = (self.current_piece.orientation + 1) % 4
-
-        for point in self.current_piece.location:
-            self.board_state[point[0]][point[1]] = self.current_piece.symbol
-
-    # Credit: Michael Stikkel
-    def _is_full(self, row):
-
-        return all(v != "." for v in row)
-
-    # Move rows down after clears
-    # Credit: Michael Stikkel
-    def clear_and_move_rows(self):
-
-        row = self.height - 1
-        count = 0
-
-        while row > 0:
-            if self.debug:
-                count += 1
-                self.debug_window.addstr(10, 0, "row: {} ".format(row))
-                self.debug_window.addstr(11, 0, "count: {} ".format(count))
-                self.debug_window.refresh()
-
-            if self._is_full(self.board_state[row]):
-                self.board_state[0:row + 1] = [["."] * self.width] + self.board_state[0:row]
-            else:
-                row -= 1
-
-    # Start the next piece
-    def add_new_piece(self, piece):
-
-        default_location = self._get_default_location(self.next_piece,
-                                                     0, self.width)
-        self.current_piece = self.next_piece
-        self.current_piece.location = default_location
-
-        self._add_piece_to_board(self.current_piece)
-
-        self.next_piece = piece
-
-    def _add_piece_to_board(self, piece):
-
-        for point in piece.location:
-            self.board_state[point[0]][point[1]] = piece.symbol
-
-    # Determine if piece landed
-    def check_piece_landed(self):
-
-        for point in self.current_piece.location:
-            # at the bottom boundary
-            if point[0] == self.height - 1:
-                return True
-
-            downward = [point[0] + 1, point[1]]
-
-            # piece exists below
-            if (downward not in self.current_piece.location
-               and self.board_state[downward[0]][downward[1]] != "."):
-
-                return True
-
-        return False
-
-    def check_and_update(self, action, next_pos):
-
-        if not self._is_invalid_move(next_pos):  # validity check and update
-            if self.debug:
-                self.debug_window.addstr(11, 0, "valid move")
-                self.debug_window.refresh()
-
-            self._update_piece_position(action, next_pos)
-
-    # Determine if default blocks are occupied
-    def _is_block_out(self, default_position=[]):
-
-        for point in default_position:
-            if self.board_state[point[0]][point[1]] is not ".":
-                return True
-
-        return False
-
-    # TODO 1: if no points inside the playable area
-    def _is_lock_out(self):
-
-        for point in self.current_piece.location:
-            pass
-
-    # http://tetris.wikia.com/wiki/Top_out
-    def is_loss(self, piece):
-
-        default_position = self._get_default_location(piece, 0, self.width)
-
-        if self._is_block_out(default_position):
-            return True
-        elif self._is_lock_out():
-            return True
-        else:
-            return False

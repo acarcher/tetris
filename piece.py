@@ -66,6 +66,7 @@ class Piece(object):
         return [[point[0] + transform[0], point[1] + transform[1]]
                 for point, transform in zip(self.location, orientation_transform)]
 
+        # TODO 9:
         # https://stackoverflow.com/a/1996601 &
         # https://stackoverflow.com/a/1996506
         # return [[1 - (point[1] - (self.extent - 2)), point[0]]
