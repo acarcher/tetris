@@ -39,7 +39,7 @@ class Board(object):
         self.vanish_zone = vanish_zone
         self.debug = debug
 
-        self.board_state = self.init_board_state()
+        self.board_state = self._init_board_state()
         self.current_piece = self.generate_rand_piece()
         self.next_piece = self.generate_rand_piece()
 
@@ -48,9 +48,9 @@ class Board(object):
         self.info_window = None
         self.debug_window = None
 
-        self.init_curses()
+        self._init_curses()
 
-    def init_curses(self):
+    def _init_curses(self):
 
         curses.curs_set(False)
 
@@ -123,14 +123,14 @@ class Board(object):
         #                  -1)
 
     # Physical representation of the board and borders
-    def init_board_state(self):
+    def _init_board_state(self):
 
         return [["." for x in range(0, self.width)]
                 for y in range(0, self.height + self.vanish_zone)]
 
     def reset_board_state(self):
 
-        self.board_state = self.init_board_state()
+        self.board_state = self._init_board_state()
 
     # write the board to the terminal
     def draw_board(self):
@@ -139,7 +139,7 @@ class Board(object):
             for x_idx, col in enumerate(row):
 
                 char = self.board_state[y_idx][x_idx]
-                color = self.get_piece_color(char)
+                color = self._get_piece_color(char)
 
                 if color:
                     self.game_window.addstr(y_idx, x_idx, CHAR,
@@ -149,7 +149,7 @@ class Board(object):
 
         self.game_window.refresh()
 
-    def get_piece_color(self, symbol):
+    def _get_piece_color(self, symbol):
 
         if symbol in ("@", "#", "$", "%", "&", "+", "="):
             color_name = Piece.symbol_to_color[symbol]
@@ -169,13 +169,13 @@ class Board(object):
     def draw_next_piece(self):
 
         self.info_window.addstr(7, 0, "Next:")
-        first, second, third, fourth = self.get_default_location(self.next_piece,
+        first, second, third, fourth = self._get_default_location(self.next_piece,
                                                                  8, self.width)
 
         self.info_window.addstr(8, 0, " " * self.width)
         self.info_window.addstr(9, 0, " " * self.width)
 
-        color = self.get_piece_color(self.next_piece.symbol)
+        color = self._get_piece_color(self.next_piece.symbol)
 
         self.info_window.addstr(first[0], first[1], CHAR,
                                 curses.color_pair(color))
@@ -220,7 +220,7 @@ class Board(object):
 
     # Default location for each piece
     # http://tetris.wikia.com/wiki/SRS
-    def get_default_location(self, piece, ref_pt_y, ref_pt_x):
+    def _get_default_location(self, piece, ref_pt_y, ref_pt_x):
 
         tetrimino = piece.tetromino
         y = ref_pt_y + 1
@@ -265,7 +265,7 @@ class Board(object):
         return self.current_piece.move(curses.KEY_DOWN)
 
     # Check for collisions and OOB
-    def is_invalid_move(self, next_pos):
+    def _is_invalid_move(self, next_pos):
 
         if self.debug:
             out_of_bounds = False
@@ -274,7 +274,7 @@ class Board(object):
             self.debug_window.addstr(6, 0, "next_pos: {}       ".format(next_pos))
             self.debug_window.refresh()
 
-            out_of_bounds = self.is_oob(next_pos)
+            out_of_bounds = self._is_oob(next_pos)
 
             self.debug_window.addstr(4, 0, "out_of_bounds: {} ".format(out_of_bounds))
             self.debug_window.refresh()
@@ -282,16 +282,16 @@ class Board(object):
             if out_of_bounds:
                 return out_of_bounds
 
-            collision = self.is_collision(next_pos)
+            collision = self._is_collision(next_pos)
 
             self.debug_window.addstr(5, 0, "collision: {}".format(collision))
             self.debug_window.refresh()
 
             return out_of_bounds or collision
 
-        return self.is_oob(next_pos) or self.is_collision(next_pos)
+        return self._is_oob(next_pos) or self._is_collision(next_pos)
 
-    def is_oob(self, next_pos):
+    def _is_oob(self, next_pos):
 
         # Out of bounds check
         for point in next_pos:
@@ -316,7 +316,7 @@ class Board(object):
         return False
 
     # when in contact with another piece
-    def is_collision(self, next_pos):
+    def _is_collision(self, next_pos):
         # Collision check from below
         for point in next_pos:
             if (point not in self.current_piece.location
@@ -336,7 +336,7 @@ class Board(object):
         return full_rows
 
     # Update board representation and piece location
-    def update_piece_position(self, action, next_pos):
+    def _update_piece_position(self, action, next_pos):
 
         for point in self.current_piece.location:
             self.board_state[point[0]][point[1]] = "."
@@ -349,7 +349,8 @@ class Board(object):
         for point in self.current_piece.location:
             self.board_state[point[0]][point[1]] = self.current_piece.symbol
 
-    def is_full(self, row):
+    # Credit: Michael Stikkel
+    def _is_full(self, row):
 
         return all(v != "." for v in row)
 
@@ -367,7 +368,7 @@ class Board(object):
                 self.debug_window.addstr(11, 0, "count: {} ".format(count))
                 self.debug_window.refresh()
 
-            if self.is_full(self.board_state[row]):
+            if self._is_full(self.board_state[row]):
                 self.board_state[0:row + 1] = [["."] * self.width] + self.board_state[0:row]
             else:
                 row -= 1
@@ -375,16 +376,16 @@ class Board(object):
     # Start the next piece
     def add_new_piece(self, piece):
 
-        default_location = self.get_default_location(self.next_piece,
+        default_location = self._get_default_location(self.next_piece,
                                                      0, self.width)
         self.current_piece = self.next_piece
         self.current_piece.location = default_location
 
-        self.add_piece_to_board(self.current_piece)
+        self._add_piece_to_board(self.current_piece)
 
         self.next_piece = piece
 
-    def add_piece_to_board(self, piece):
+    def _add_piece_to_board(self, piece):
 
         for point in piece.location:
             self.board_state[point[0]][point[1]] = piece.symbol
@@ -409,12 +410,12 @@ class Board(object):
 
     def check_and_update(self, action, next_pos):
 
-        if not self.is_invalid_move(next_pos):  # validity check and update
+        if not self._is_invalid_move(next_pos):  # validity check and update
             if self.debug:
                 self.debug_window.addstr(11, 0, "valid move")
                 self.debug_window.refresh()
 
-            self.update_piece_position(action, next_pos)
+            self._update_piece_position(action, next_pos)
 
     # Determine if default blocks are occupied
     def _is_block_out(self, default_position=[]):
@@ -434,7 +435,7 @@ class Board(object):
     # http://tetris.wikia.com/wiki/Top_out
     def is_loss(self, piece):
 
-        default_position = self.get_default_location(piece, 0, self.width)
+        default_position = self._get_default_location(piece, 0, self.width)
 
         if self._is_block_out(default_position):
             return True

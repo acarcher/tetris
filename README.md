@@ -40,5 +40,3 @@ Directional keys:
 q/y/n:
 * q quits at any time
 * y/n allow continuing or quitting after a loss
-
-
