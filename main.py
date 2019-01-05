@@ -2,6 +2,7 @@ from curses import wrapper
 
 from engine import Engine
 from board import Board
+from config import SPEED, DEBUG
 
 # FIXME 1: The game_window scrolls up by one line or fails when height is not
 # + 1 greater than area being written to, also forces border window to be
@@ -26,12 +27,17 @@ from board import Board
 
 # TODO 7: Make force dropping increase score
 
+# https://docs.python.org/3.6/library/curses.html
+# https://docs.python.org/3/howto/curses.html
+
 
 def main(screen):
-    board = Board(screen, debug=False)
-    game = Engine(board, .75)  # .75 is the speed, lower is harder, higher is easier
+
+    board = Board(screen, debug=DEBUG)
+    game = Engine(board, SPEED)
     game.run()
 
 
 if __name__ == "__main__":
+
     wrapper(main)

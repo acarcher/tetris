@@ -5,8 +5,6 @@ import config
 # Base representation for each tetromino
 # Pieces can be moved and rotated
 
-CHAR = b'\xe2\x96\xa0'
-
 
 class Piece(object):
 
@@ -42,6 +40,7 @@ class Piece(object):
     }
 
     def __init__(self, tetromino, location=None):
+
         self.tetromino = tetromino
         self.color, self.symbol, self.extent = self.tetromino_attributes[tetromino]
         self.orientation = 0
@@ -49,6 +48,7 @@ class Piece(object):
 
     # Takes in a key_press, returns coords
     def move(self, key_press):
+
         if key_press == KEY_RIGHT:
             return [[point[0], point[1] + 1] for point in self.location]
 
@@ -60,6 +60,7 @@ class Piece(object):
 
     # http://tetris.wikia.com/wiki/SRS
     def rotate_clockwise(self):
+
         orientation_transform = self._next_orientation()
 
         return [[point[0] + transform[0], point[1] + transform[1]]
@@ -73,6 +74,7 @@ class Piece(object):
         #         for point in self.location]
 
     def _next_orientation(self):
+
         mapping = self.tetromino_orientations[self.tetromino]
 
         transform = mapping[self.orientation]

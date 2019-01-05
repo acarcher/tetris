@@ -1,3 +1,7 @@
+SPEED = .75  # .75 is the speed, lower is harder, higher is easier
+DEBUG = False
+CHAR = b'\xe2\x96\xa0'
+
 i_rotate_map = [
     [[-1, 2], [0, 1], [1, 0], [2, -1]],
     [[2, 1], [1, 0], [0, -1], [-1, -2]],

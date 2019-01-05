@@ -28,7 +28,8 @@ class Engine(object):
         self.game_over = False
 
     # Takes in key_press, returns the correct action
-    def action(self, key_press):
+    def dispatch_action(self, key_press):
+
         move_keys = (KEY_RIGHT, KEY_LEFT, KEY_DOWN)
 
         rotate_key = (KEY_UP,)
@@ -42,17 +43,10 @@ class Engine(object):
         else:
             raise ValueError("Key not bound")
 
-    def action_update(self, action, next_pos):
-        if not self.board.invalid_move(next_pos):  # validity check and update
-            if self.board.debug:
-                self.board.debug_window.addstr(11, 0, "valid move")
-                self.board.debug_window.refresh()
-
-            self.board.update_piece_position(action, next_pos)
-
     # new piece loop
-    def new_piece_handler(self):
-        next_piece = self.board.random_piece()
+    def handle_new_piece(self):
+
+        next_piece = self.board.generate_rand_piece()
 
         if self.board.is_loss(next_piece):
             self.game_over = True
@@ -60,7 +54,8 @@ class Engine(object):
         else:
             self.board.add_new_piece(next_piece)
 
-    def piece_landed_handler(self):
+    def handle_piece_landed(self):
+
         if self.board.is_loss(self.board.current_piece):  # check for lock or block
             self.game_over = True
             return
@@ -76,11 +71,12 @@ class Engine(object):
             if self.board.debug:
                 self.board.debug_window.addstr(3, 0, "New piece: {} ".format(True))
 
-            self.new_piece_handler()
+            self.handle_new_piece()
 
     # https://tetris.wiki/Scoring
     # Nintendo scoring
     def calculate_score(self, full_rows):
+
         lines_cleared = len(full_rows)
 
         line_mult = [40, 100, 300, 1200]
@@ -90,12 +86,14 @@ class Engine(object):
         return score
 
     def update_state(self, full_rows):
+
         self.rows_cleared += len(full_rows)
         self.level = self.rows_cleared // 5 if self.rows_cleared // 5 < 10 else 10
         self.speed_mod = self.level * self.tick_length
         self.score += self.calculate_score(full_rows)
 
     def reset_engine_state(self):
+
         self.rows_cleared = 0
         self.level = 0
         self.speed_mod = 0
@@ -103,7 +101,8 @@ class Engine(object):
         self.tick = 0
         self.game_over = False
 
-    def game_over_handler(self):
+    def handle_game_over(self):
+
         self.board.draw_game_over()
 
         self.board.game_window.nodelay(False)
@@ -121,9 +120,9 @@ class Engine(object):
             else:
                 continue
 
-    def control_loop(self):
+    def loop_game_logic(self):
 
-        self.board.add_new_piece(self.board.random_piece())
+        self.board.add_new_piece(self.board.generate_rand_piece())
 
         while(not self.game_over):
             if self.board.debug:
@@ -143,37 +142,38 @@ class Engine(object):
 
             if key_pressed in (KEY_DOWN, KEY_LEFT, KEY_RIGHT, KEY_UP, ord('q')):
 
-                self.action_update(*self.action(key_pressed))
+                self.board.check_and_update(*self.dispatch_action(key_pressed))
 
-                if self.board.piece_landed():
-                    self.piece_landed_handler()
+                if self.board.check_piece_landed():
+                    self.handle_piece_landed()
                     self.board.draw_next_piece()
 
             if self.tick % ((self.speed - self.speed_mod)
                // self.tick_length + 1) == 0:  # default movement
 
-                self.action_update(None, self.board.gravity())
+                self.board.check_and_update(None, self.board.apply_gravity())
                 if self.board.debug:
                     self.board.debug_window.addstr(2, 0, "Gravity: {}".format(self.tick))
                     self.board.debug_window.addstr(3, 0, "New piece: {}".format(False))
                     self.board.debug_window.refresh()
 
-                if self.board.piece_landed():
-                    self.piece_landed_handler()
+                if self.board.check_piece_landed():
+                    self.handle_piece_landed()
 
             # https://stackoverflow.com/a/25251804
             time.sleep(self.tick_length - time.time() % self.tick_length)
             self.tick += 1
 
     def exit_game(self):
+
         exit(0)
 
     def run(self):
 
         try:
             while(True):
-                self.control_loop()
-                self.game_over_handler()
+                self.loop_game_logic()
+                self.handle_game_over()
 
         except KeyboardInterrupt:
             self.exit_game()
