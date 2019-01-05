@@ -12,6 +12,12 @@ A tetris terminal game written in Python 3 using the builtin curses module (a Py
 
 Python >=3.5.2
 
+### Config
+
+The config.py file contains global variables ```DEBUG``` and ```SPEED```. ```DEBUG```
+turns debugging mode on and off, while ```SPEED``` controls the initial period length (difficulty)
+of the game.
+
 ### Running the program
 
 To run the program, type:
