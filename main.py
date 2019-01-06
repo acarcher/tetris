@@ -2,7 +2,8 @@ from curses import wrapper
 
 from engine import Engine
 from board import Board
-from config import SPEED, DEBUG, TICK_LENGTH
+from display import Display
+from config import SPEED, DEBUG, TICK_LENGTH, HEIGHT, WIDTH
 
 # FIXME 1: The game_window scrolls up by one line or fails when height is not
 # + 1 greater than area being written to, also forces border window to be
@@ -23,7 +24,7 @@ from config import SPEED, DEBUG, TICK_LENGTH
 # TODO 5: Better debugging
 #   * separate debugger/logger that has access to windows and handles curses directly
 
-# TODO 6: Document, rename, reorder, PEP8-ify
+# TODO 6: Document
 
 # TODO 7: Make force dropping increase score
 
@@ -36,10 +37,13 @@ from config import SPEED, DEBUG, TICK_LENGTH
 # https://docs.python.org/3/howto/curses.html
 
 
+# TODO: Ideally debug is passed into engine
+# TODO: Remove display from being passed to board
 def main(screen):
 
-    board = Board(screen, debug=DEBUG)
-    game = Engine(board, SPEED, TICK_LENGTH)
+    display = Display(screen, HEIGHT, WIDTH, debug=DEBUG)
+    board = Board(display, HEIGHT, WIDTH, debug=DEBUG)
+    game = Engine(board, display, SPEED, TICK_LENGTH)
     game.run()
 
 

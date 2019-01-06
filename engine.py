@@ -11,12 +11,13 @@ class Engine(object):
     # score: points earned
     # tick_length: period of the game
 
-    def __init__(self, board, speed, tick_length):
+    def __init__(self, board, display, speed, tick_length):
 
         if speed < 0:
             raise ValueError("Speed cannot be negative")
 
         self.board = board
+        self.display = display
         self.speed = speed
         self.tick_length = tick_length
         self.max_level = speed // tick_length
@@ -64,12 +65,12 @@ class Engine(object):
 
             if full_rows:
                 self._update_state(full_rows)
-                self.board.draw_score(self.score)
-                self.board.draw_level(self.level)
+                self.display.draw_score(self.score)
+                self.display.draw_level(self.level)
                 self.board.clear_and_move_rows()
 
-            if self.board.debug:
-                self.board.debug_window.addstr(3, 0, "New piece: {} ".format(True))
+            if self.display.debug:
+                self.display.debug_window.addstr(3, 0, "New piece: {} ".format(True))
 
             self._handle_new_piece()
 
@@ -86,20 +87,20 @@ class Engine(object):
 
     def _handle_game_over(self):
 
-        self.board.draw_game_over()
+        self.display.draw_game_over()
 
-        self.board.game_window.nodelay(False)
+        self.display.game_window.nodelay(False)
 
         while(self.game_over):
-            key = self.board.get_input()
+            key = self.display.get_input()
 
             if key == ord('y'):
-                self.board.game_window.nodelay(True)
+                self.display.game_window.nodelay(True)
                 self._reset_engine_state()
                 self.board.reset_board_state()
             elif key == ord('n'):
-                self.board.game_window.nodelay(True)
-                self.exit_game()
+                self.display.game_window.nodelay(True)
+                self._exit_game()
             else:
                 continue
 
@@ -142,20 +143,20 @@ class Engine(object):
         self.board.add_new_piece(self.board.generate_rand_piece())
 
         while(not self.game_over):
-            if self.board.debug:
-                self.board.debug_window.addstr(0, 0, "Tick: {}".format(self.tick))
-                self.board.debug_window.refresh()
+            if self.display.debug:
+                self.display.debug_window.addstr(0, 0, "Tick: {}".format(self.tick))
+                self.display.debug_window.refresh()
 
-            self.board.draw_board()
-            self.board.draw_score(self.score)
-            self.board.draw_level(self.level)
-            self.board.draw_next_piece()
+            self.display.draw_board(self.board.board_state)
+            self.display.draw_score(self.score)
+            self.display.draw_level(self.level)
+            self.display.draw_next_piece(self.board.next_piece)
 
-            key_pressed = self.board.get_input()
+            key_pressed = self.display.get_input()
 
-            if self.board.debug:
-                self.board.debug_window.addstr(1, 0, "Key pressed: {} ".format(key_pressed))
-                self.board.debug_window.refresh()
+            if self.display.debug:
+                self.display.debug_window.addstr(1, 0, "Key pressed: {} ".format(key_pressed))
+                self.display.debug_window.refresh()
 
             if key_pressed in (KEY_DOWN, KEY_LEFT, KEY_RIGHT, KEY_UP, ord('q')):
 
@@ -163,16 +164,16 @@ class Engine(object):
 
                 if self.board.check_piece_landed():
                     self._handle_piece_landed()
-                    self.board.draw_next_piece()
+                    self.display.draw_next_piece(self.board.next_piece)
 
             if self.tick % ((self.speed - self.speed_mod)
                // self.tick_length + 1) == 0:  # default movement
 
                 self.board.check_and_update(None, self.board.apply_gravity())
-                if self.board.debug:
-                    self.board.debug_window.addstr(2, 0, "Gravity: {}".format(self.tick))
-                    self.board.debug_window.addstr(3, 0, "New piece: {}".format(False))
-                    self.board.debug_window.refresh()
+                if self.display.debug:
+                    self.display.debug_window.addstr(2, 0, "Gravity: {}".format(self.tick))
+                    self.display.debug_window.addstr(3, 0, "New piece: {}".format(False))
+                    self.display.debug_window.refresh()
 
                 if self.board.check_piece_landed():
                     self._handle_piece_landed()

@@ -81,3 +81,35 @@ class Piece(object):
         transform = mapping[self.orientation]
 
         return transform
+
+    # Default location for each piece
+    # http://tetris.wikia.com/wiki/SRS
+    def _get_default_location(self, ref_pt_y, ref_pt_x):
+
+        tetrimino = self.tetromino
+        y = ref_pt_y + 1
+        x_cl = ref_pt_x // 2  # center left
+
+        if tetrimino == "I":
+            return [[y, x_cl - 2], [y, x_cl - 1],
+                    [y, x_cl], [y, x_cl + 1]]
+        elif tetrimino == "J":
+            return [[y - 1, x_cl - 2], [y, x_cl - 2],
+                    [y, x_cl - 1], [y, x_cl]]
+        elif tetrimino == "L":
+            return [[y - 1, x_cl], [y, x_cl - 2],
+                    [y, x_cl - 1], [y, x_cl]]
+        elif tetrimino == "O":
+            return [[y - 1, x_cl - 1], [y - 1, x_cl],
+                    [y, x_cl - 1], [y, x_cl]]
+        elif tetrimino == "S":
+            return [[y - 1, x_cl - 1], [y - 1, x_cl],
+                    [y, x_cl - 2], [y, x_cl - 1]]
+        elif tetrimino == "T":
+            return [[y - 1, x_cl - 1], [y, x_cl - 2],
+                    [y, x_cl - 1], [y, x_cl]]
+        elif tetrimino == "Z":
+            return [[y - 1, x_cl - 2], [y - 1, x_cl - 1],
+                    [y, x_cl - 1], [y, x_cl]]
+        else:
+            raise ValueError("Incorrect tetrimino")

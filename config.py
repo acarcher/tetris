@@ -1,7 +1,9 @@
 SPEED = .75  # .75 is the speed, lower is harder, higher is easier
-DEBUG = False
+DEBUG = True
 CHAR = b'\xe2\x96\xa0'
 TICK_LENGTH = .05
+HEIGHT = 20
+WIDTH = 10
 
 i_rotate_map = [
     [[-1, 2], [0, 1], [1, 0], [2, -1]],
