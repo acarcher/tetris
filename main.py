@@ -32,6 +32,8 @@ from config import SPEED, DEBUG, TICK_LENGTH, HEIGHT, WIDTH
 
 # TODO 9: Add generic rotation algorithm
 
+# TODO 10: Simplify tetromino_attributes and symbol_to_color
+
 # Curses references:
 # https://docs.python.org/3.6/library/curses.html
 # https://docs.python.org/3/howto/curses.html

@@ -36,6 +36,15 @@ class Board(object):
         return [["." for x in range(0, self.width)]
                 for y in range(0, self.height + self.vanish_zone)]
 
+    # get the next piece
+    def generate_rand_piece(self):
+
+        if self.debug:
+            return Piece("I")
+
+        return [Piece("I"), Piece("J"), Piece("L"), Piece("O"),
+                Piece("S"), Piece("T"), Piece("Z")][random.randint(0, 6)]
+
     def reset_board_state(self):
 
         self.board_state = self._init_board_state()
@@ -48,6 +57,67 @@ class Board(object):
                 self.display.debug_window.refresh()
 
             self._update_piece_position(action, next_pos)
+
+        # Check for collisions and OOB
+    def _is_invalid_move(self, next_pos):
+
+        if self.debug:
+            out_of_bounds = False
+            collision = False
+
+            self.display.debug_window.addstr(6, 0, "next_pos: {}       ".format(next_pos))
+            self.display.debug_window.refresh()
+
+            out_of_bounds = self._is_oob(next_pos)
+
+            self.display.debug_window.addstr(4, 0, "out_of_bounds: {} ".format(out_of_bounds))
+            self.display.debug_window.refresh()
+
+            if out_of_bounds:
+                return out_of_bounds
+
+            collision = self._is_collision(next_pos)
+
+            self.display.debug_window.addstr(5, 0, "collision: {}".format(collision))
+            self.display.debug_window.refresh()
+
+            return out_of_bounds or collision
+
+        return self._is_oob(next_pos) or self._is_collision(next_pos)
+
+    def _is_oob(self, next_pos):
+
+        # Out of bounds check
+        for point in next_pos:
+            if point[0] < 0 or point[0] > self.height - 1:
+                if self.debug:
+                    self.display.debug_window.addstr(8, 0, "height <0: {}".format(point[0] < 0))
+                    self.display.debug_window.addstr(9, 0, "height >: {}".format(point[0] > self.height - 1))
+                    self.display.debug_window.refresh()
+                return True
+            elif point[1] < 0 or point[1] > self.width - 1:
+                if self.debug:
+                    self.display.debug_window.addstr(10, 0, "width <0: {}".format(point[1] < 0))
+                    self.display.debug_window.addstr(11, 0, "width >: {}".format(point[1] > self.width - 1))
+                    self.display.debug_window.refresh()
+                return True
+        if self.debug:
+            self.display.debug_window.addstr(8, 0, " " * 20)
+            self.display.debug_window.addstr(9, 0, " " * 20)
+            self.display.debug_window.addstr(10, 0, " " * 20)
+            self.display.debug_window.addstr(11, 0, " " * 20)
+            self.display.debug_window.refresh()
+        return False
+
+    # when in contact with another piece
+    def _is_collision(self, next_pos):
+        # Collision check from below
+        for point in next_pos:
+            if (point not in self.current_piece.location
+               and self.board_state[point[0]][point[1]] != "."):
+
+                return True
+        return False
 
     # Update board representation and piece location
     def _update_piece_position(self, action, next_pos):
@@ -141,15 +211,6 @@ class Board(object):
         for point in piece.location:
             self.board_state[point[0]][point[1]] = piece.symbol
 
-    # get the next piece
-    def generate_rand_piece(self):
-
-        if self.debug:
-            return Piece("I")
-
-        return [Piece("I"), Piece("J"), Piece("L"), Piece("O"),
-                Piece("S"), Piece("T"), Piece("Z")][random.randint(0, 6)]
-
     # Default piece movement
     def apply_gravity(self):
 
@@ -173,63 +234,3 @@ class Board(object):
 
         return False
 
-    # Check for collisions and OOB
-    def _is_invalid_move(self, next_pos):
-
-        if self.debug:
-            out_of_bounds = False
-            collision = False
-
-            self.display.debug_window.addstr(6, 0, "next_pos: {}       ".format(next_pos))
-            self.display.debug_window.refresh()
-
-            out_of_bounds = self._is_oob(next_pos)
-
-            self.display.debug_window.addstr(4, 0, "out_of_bounds: {} ".format(out_of_bounds))
-            self.display.debug_window.refresh()
-
-            if out_of_bounds:
-                return out_of_bounds
-
-            collision = self._is_collision(next_pos)
-
-            self.display.debug_window.addstr(5, 0, "collision: {}".format(collision))
-            self.display.debug_window.refresh()
-
-            return out_of_bounds or collision
-
-        return self._is_oob(next_pos) or self._is_collision(next_pos)
-
-    def _is_oob(self, next_pos):
-
-        # Out of bounds check
-        for point in next_pos:
-            if point[0] < 0 or point[0] > self.height - 1:
-                if self.debug:
-                    self.display.debug_window.addstr(8, 0, "height <0: {}".format(point[0] < 0))
-                    self.display.debug_window.addstr(9, 0, "height >: {}".format(point[0] > self.height - 1))
-                    self.display.debug_window.refresh()
-                return True
-            elif point[1] < 0 or point[1] > self.width - 1:
-                if self.debug:
-                    self.display.debug_window.addstr(10, 0, "width <0: {}".format(point[1] < 0))
-                    self.display.debug_window.addstr(11, 0, "width >: {}".format(point[1] > self.width - 1))
-                    self.display.debug_window.refresh()
-                return True
-        if self.debug:
-            self.display.debug_window.addstr(8, 0, " " * 20)
-            self.display.debug_window.addstr(9, 0, " " * 20)
-            self.display.debug_window.addstr(10, 0, " " * 20)
-            self.display.debug_window.addstr(11, 0, " " * 20)
-            self.display.debug_window.refresh()
-        return False
-
-    # when in contact with another piece
-    def _is_collision(self, next_pos):
-        # Collision check from below
-        for point in next_pos:
-            if (point not in self.current_piece.location
-               and self.board_state[point[0]][point[1]] != "."):
-
-                return True
-        return False
