@@ -8,6 +8,8 @@ import config
 
 class Piece(object):
 
+    # TODO 10: Simplify tetromino_attributes and symbol_to_color
+
     tetromino_attributes = {
         "I": ("cyan", "@", 4),
         "J": ("blue", "#", 3),
