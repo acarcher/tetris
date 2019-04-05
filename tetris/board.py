@@ -4,7 +4,7 @@
 import curses
 import random
 
-from piece import Piece
+from tetris.piece import Piece
 
 # TODO 4: # COLOR_DEFAULT = 8
 
@@ -183,7 +183,7 @@ class Board(object):
     def _is_block_out(self, default_position=[]):
 
         for point in default_position:
-            if self.board_state[point[0]][point[1]] is not ".":
+            if self.board_state[point[0]][point[1]] != ".":
                 return True
 
         return False

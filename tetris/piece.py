@@ -1,6 +1,6 @@
 from curses import KEY_RIGHT, KEY_LEFT, KEY_DOWN
 
-import config
+from tetris import config
 
 # Base representation for each tetromino
 # Pieces can be moved and rotated
