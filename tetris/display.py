@@ -1,8 +1,8 @@
 # Handles displaying the board to screen
 
 import curses
-from config import CHAR
-from piece import Piece
+from tetris.config import CHAR
+from tetris.piece import Piece
 
 
 class Display(object):

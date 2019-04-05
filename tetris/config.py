@@ -1,5 +1,5 @@
 SPEED = .75  # .75 is the speed, lower is harder, higher is easier
-DEBUG = True
+DEBUG = False
 CHAR = b'\xe2\x96\xa0'
 TICK_LENGTH = .05
 HEIGHT = 20

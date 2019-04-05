@@ -1,9 +1,9 @@
 from curses import wrapper
 
-from engine import Engine
-from board import Board
-from display import Display
-from config import SPEED, DEBUG, TICK_LENGTH, HEIGHT, WIDTH
+from tetris.engine import Engine
+from tetris.board import Board
+from tetris.display import Display
+from tetris.config import SPEED, DEBUG, TICK_LENGTH, HEIGHT, WIDTH
 
 # FIXME 1: The game_window scrolls up by one line or fails when height is not
 # + 1 greater than area being written to, also forces border window to be
