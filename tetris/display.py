@@ -119,7 +119,7 @@ class Display(object):
                 char = board_state[y_idx][x_idx]
                 color = self._get_piece_color(char)
 
-                if color:
+                if color:  # don't like decoupling representation with what's being drawn
                     self.game_window.addstr(y_idx, x_idx, CHAR,
                                             curses.color_pair(color))
                 else:
@@ -127,7 +127,7 @@ class Display(object):
 
         self.game_window.refresh()
 
-    def _get_piece_color(self, symbol):
+    def _get_piece_color(self, symbol):  # unnecessary lookup
 
         if symbol in ("@", "#", "$", "%", "&", "+", "="):
             color_name = Piece.symbol_to_color[symbol]
@@ -144,7 +144,7 @@ class Display(object):
         self.info_window.addstr(2, 0, str(score))
         self.info_window.refresh()
 
-    def draw_next_piece(self, next_piece):
+    def draw_next_piece(self, next_piece): # complex
 
         self.info_window.addstr(7, 0, "Next:")
         first, second, third, fourth = next_piece._get_default_location(8, self.width)
@@ -172,7 +172,7 @@ class Display(object):
         self.info_window.addstr(5, 0, str(level))
         self.info_window.refresh()
 
-    def draw_game_over(self):
+    def draw_game_over(self):   # overly complex
 
         for y in range(0, self.height):
             for x in range(0, self.width):

@@ -11,7 +11,8 @@ from tetris.piece import Piece
 
 class Board(object):
 
-    # TODO: remove display
+    # TODO: remove display: a bit complex
+    # debugging information everywhere needs cleanup
     def __init__(self, display, height, width, vanish_zone=0, debug=False):
 
         if height % 2 != 0:
@@ -58,7 +59,7 @@ class Board(object):
 
             self._update_piece_position(action, next_pos)
 
-        # Check for collisions and OOB
+    # Check for collisions and OOB
     def _is_invalid_move(self, next_pos):
 
         if self.debug:
@@ -170,7 +171,7 @@ class Board(object):
     # http://tetris.wikia.com/wiki/Top_out
     def is_loss(self, piece):
 
-        default_position = piece._get_default_location(0, self.width)
+        default_position = piece._get_default_location(0, self.width)  # not intuitive
 
         if self._is_block_out(default_position):
             return True
@@ -206,7 +207,7 @@ class Board(object):
 
         self.next_piece = piece
 
-    def _add_piece_to_board(self, piece):
+    def _add_piece_to_board(self, piece): # lack of clarity on whether or not passing pieces is worth it
 
         for point in piece.location:
             self.board_state[point[0]][point[1]] = piece.symbol

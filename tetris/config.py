@@ -1,3 +1,4 @@
+# needs more explanation
 SPEED = .75  # .75 is the speed, lower is harder, higher is easier
 DEBUG = False
 CHAR = b'\xe2\x96\xa0'
